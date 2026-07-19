@@ -17,12 +17,7 @@ export default function GroceryPanel({ tripId }: Props) {
   });
 
   if (isPending) {
-    return (
-      <section className="sticky-note grocery">
-        <h2 className="sticky-title">Groceries</h2>
-        <p className="item-meta">Loading groceries...</p>
-      </section>
-    );
+    return <p className="panel-meta">Loading groceries...</p>;
   }
 
   if (isError || items.length === 0) {
@@ -30,23 +25,19 @@ export default function GroceryPanel({ tripId }: Props) {
   }
 
   return (
-    <section className="sticky-note grocery">
-      <h2 className="sticky-title">Groceries</h2>
+    <ul className="panel-list">
+      {items.map((item) => (
+        <li key={item.id} className="panel-list-item">
+          <div className="panel-item-main">
+            <p className="panel-item-name">{item.name}</p>
+            {item.quantity && (
+              <span className="panel-meta">{item.quantity}</span>
+            )}
+          </div>
 
-      <ul className="sticky-list">
-        {items.map((item) => (
-          <li key={item.id} className="sticky-list-item">
-            <div className="item-main">
-              <p className="item-name">{item.name}</p>
-              {item.quantity && (
-                <span className="item-meta">{item.quantity}</span>
-              )}
-            </div>
-
-            {item.is_packed && <span className="packed-check">✓</span>}
-          </li>
-        ))}
-      </ul>
-    </section>
+          {item.is_packed && <span className="panel-check">✓</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

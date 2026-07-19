@@ -40,12 +40,7 @@ export default function WeatherPanel({ tripId }: Props) {
   });
 
   if (isPending) {
-    return (
-      <section className="sticky-note weather">
-        <h2 className="sticky-title">Weather</h2>
-        <p className="item-meta">Loading weather...</p>
-      </section>
-    );
+    return <p className="panel-meta">Loading weather...</p>;
   }
 
   if (
@@ -63,9 +58,7 @@ export default function WeatherPanel({ tripId }: Props) {
     weather.daily_units.wind_speed ?? weather.current.wind_speed_unit ?? "";
 
   return (
-    <section className="sticky-note weather">
-      <h2 className="sticky-title">Weather</h2>
-
+    <>
       <div className="weather-current">
         <p className="weather-temp">
           {weather.current.temperature !== null
@@ -117,6 +110,6 @@ export default function WeatherPanel({ tripId }: Props) {
           );
         })}
       </ul>
-    </section>
+    </>
   );
 }

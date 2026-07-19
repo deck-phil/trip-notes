@@ -17,12 +17,7 @@ export default function PersonalListPanel({ tripId }: Props) {
   });
 
   if (isPending) {
-    return (
-      <section className="sticky-note personal">
-        <h2 className="sticky-title">Personal Items</h2>
-        <p className="item-meta">Loading personal items...</p>
-      </section>
-    );
+    return <p className="panel-meta">Loading personal items...</p>;
   }
 
   if (isError || items.length === 0) {
@@ -30,22 +25,24 @@ export default function PersonalListPanel({ tripId }: Props) {
   }
 
   return (
-    <section className="sticky-note personal">
-      <h2 className="sticky-title">Personal Items</h2>
+    <ul className="panel-list">
+      {items.map((item) => (
+        <li key={item.id} className="panel-list-item">
+          <div className="panel-item-main">
+            <p className="panel-item-name">{item.name}</p>
 
-      <ul className="sticky-list">
-        {items.map((item) => (
-          <li key={item.id} className="sticky-list-item">
-            <div className="item-main">
-              <p className="item-name">{item.name}</p>
-              {item.quantity && <span className="item-meta">{item.quantity}</span>}
-              {item.notes && <span className="item-meta">{item.notes}</span>}
-            </div>
+            {item.quantity && (
+              <p className="panel-meta">{item.quantity}</p>
+            )}
 
-            {item.is_packed && <span className="packed-check">✓</span>}
-          </li>
-        ))}
-      </ul>
-    </section>
+            {item.notes && (
+              <p className="panel-meta">{item.notes}</p>
+            )}
+          </div>
+
+          {item.is_packed && <span className="panel-check">✓</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

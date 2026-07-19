@@ -1,22 +1,86 @@
-import { useQuery } from "@tanstack/react-query";
+import {useEffect, useMemo, useState} from "react";
+import {useQuery} from "@tanstack/react-query";
+import {Navigate, useParams} from "react-router-dom";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent, type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import {api, ApiError} from "../services/api";
-import type { Trip } from "../types/trip";
-import TripHeaderPanel from "../components/TripHeaderPanel.tsx";
-import GroceryPanel from "../components/GroceryPanel.tsx";
-import PersonalListPanel from "../components/PersonalListPanel.tsx";
+import type {Trip} from "../types/trip";
+import TripHeaderPanel from "../components/TripHeaderPanel";
+import GroceryPanel from "../components/GroceryPanel";
+import PersonalListPanel from "../components/PersonalListPanel";
 import NotesPanel from "../components/NotesPanel";
 import WeatherPanel from "../components/WeatherPanel";
 import TripMapPanel from "../components/TripMapPanel";
+import BoardColumn from "../components/board/BoardColumn";
+import BoardModuleCard from "../components/board/BoardModuleCard";
 import "../styles/triptrack-board.css";
-import {Navigate, useParams} from "react-router-dom";
+import BoardModuleCardPreview from "../components/board/BoardModuleCardPreview.tsx";
+
+type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
+
+interface ModuleInstance {
+  id: string;
+  type: ModuleType;
+  title: string;
+  props?: Record<string, unknown>;
+}
+
+type ColumnId = "column-1" | "column-2" | "column-3";
+type BoardLayout = Record<ColumnId, string[]>;
+
+function buildInitialLayout(moduleInstances: ModuleInstance[]): BoardLayout {
+  const columnIds: ColumnId[] = ["column-1", "column-2", "column-3"];
+
+  const initialLayout: BoardLayout = {
+    "column-1": [],
+    "column-2": [],
+    "column-3": [],
+  };
+
+  moduleInstances.forEach((module, index) => {
+    const columnId = columnIds[index % columnIds.length];
+    initialLayout[columnId].push(module.id);
+  });
+
+  return initialLayout;
+}
+
+function isColumnId(value: string): value is ColumnId {
+  return value === "column-1" || value === "column-2" || value === "column-3";
+}
+
+function findContainer(layout: BoardLayout, id: string): ColumnId | null {
+  if (isColumnId(id)) {
+    return id;
+  }
+
+  const columnIds = Object.keys(layout) as ColumnId[];
+
+  for (const columnId of columnIds) {
+    if (layout[columnId].includes(id)) {
+      return columnId;
+    }
+  }
+
+  return null;
+}
 
 export default function TripBoardPage() {
-  const { tripId } = useParams<{ tripId: string }>();
+  const {tripId} = useParams<{ tripId: string }>();
   const parsedTripId = Number(tripId);
-
-  if (!tripId || Number.isNaN(parsedTripId)) {
-    return <Navigate to="/trips" replace />;
-  }
 
   const {
     data: trip,
@@ -25,13 +89,211 @@ export default function TripBoardPage() {
   } = useQuery<Trip>({
     queryKey: ["trip", parsedTripId],
     queryFn: () => api.getTrip(parsedTripId),
+    enabled: !!tripId && !Number.isNaN(parsedTripId),
     retry: (failureCount, error) => {
-      if (error instanceof ApiError && [400, 401, 403, 404].includes(error.status)) {
+      if (
+          error instanceof ApiError &&
+          [400, 401, 403, 404].includes(error.status)
+      ) {
         return false;
       }
       return failureCount < 2;
     },
   });
+
+  const hasMap =
+      !!trip &&
+      trip.latitude !== null &&
+      trip.longitude !== null &&
+      !Number.isNaN(Number(trip.latitude)) &&
+      !Number.isNaN(Number(trip.longitude));
+
+  const moduleInstances = useMemo<ModuleInstance[]>(() => {
+    if (!trip) {
+      return [];
+    }
+
+    const items: ModuleInstance[] = [
+      {id: "grocery-primary", type: "grocery", title: "Groceries"},
+      {id: "personal-primary", type: "personal", title: "Personal Items"},
+      {id: "notes-primary", type: "notes", title: "Notes"},
+      {id: "weather-primary", type: "weather", title: "Weather"},
+    ];
+
+    if (hasMap) {
+      items.push({id: "map-primary", type: "map", title: "Map"});
+    }
+
+    return items;
+  }, [trip, hasMap]);
+
+  const moduleLookup = useMemo(() => {
+    return Object.fromEntries(
+        moduleInstances.map((module) => [module.id, module])
+    ) as Record<string, ModuleInstance>;
+  }, [moduleInstances]);
+
+  const [layout, setLayout] = useState<BoardLayout>(() =>
+      buildInitialLayout(moduleInstances)
+  );
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLayout(buildInitialLayout(moduleInstances));
+  }, [moduleInstances]);
+
+  const sensors = useSensors(
+      useSensor(PointerSensor, {
+        activationConstraint: {
+          distance: 6,
+        },
+      }),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      })
+  );
+
+  function renderModule(instance: ModuleInstance) {
+    if (!trip) {
+      return null;
+    }
+
+    switch (instance.type) {
+      case "grocery":
+        return <GroceryPanel tripId={parsedTripId}/>;
+      case "personal":
+        return <PersonalListPanel tripId={parsedTripId}/>;
+      case "notes":
+        return <NotesPanel tripId={parsedTripId}/>;
+      case "weather":
+        return <WeatherPanel tripId={parsedTripId}/>;
+      case "map":
+        return <TripMapPanel trip={trip}/>;
+      default:
+        return null;
+    }
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const {active, over} = event;
+
+    setActiveId(null);
+
+    if (!over) {
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    if (activeId === overId) {
+      return;
+    }
+
+    setLayout((current) => {
+      const sourceColumn = findContainer(current, activeId);
+      const targetColumn = findContainer(current, overId);
+
+      if (!sourceColumn || !targetColumn) {
+        return current;
+      }
+
+      if (sourceColumn !== targetColumn) {
+        return current;
+      }
+
+      if (isColumnId(overId)) {
+        return current;
+      }
+
+      const oldIndex = current[sourceColumn].indexOf(activeId);
+      const newIndex = current[sourceColumn].indexOf(overId);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [sourceColumn]: arrayMove(current[sourceColumn], oldIndex, newIndex),
+      };
+    });
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const {active, over} = event;
+
+    if (!over) {
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    if (activeId === overId) {
+      return;
+    }
+
+    setLayout((current) => {
+      const sourceColumn = findContainer(current, activeId);
+      const targetColumn = findContainer(current, overId);
+
+      if (!sourceColumn || !targetColumn) {
+        return current;
+      }
+
+      if (sourceColumn === targetColumn) {
+        return current;
+      }
+
+      const sourceItems = current[sourceColumn];
+      const targetItems = current[targetColumn];
+
+      const sourceIndex = sourceItems.indexOf(activeId);
+      if (sourceIndex === -1) {
+        return current;
+      }
+
+      const alreadyInTarget = targetItems.includes(activeId);
+      if (alreadyInTarget) {
+        return current;
+      }
+
+      const nextSourceItems = [...sourceItems];
+      const nextTargetItems = [...targetItems];
+
+      nextSourceItems.splice(sourceIndex, 1);
+
+      if (isColumnId(overId)) {
+        nextTargetItems.push(activeId);
+      } else {
+        const targetIndex = nextTargetItems.indexOf(overId);
+        if (targetIndex === -1) {
+          return current;
+        }
+        nextTargetItems.splice(targetIndex, 0, activeId);
+      }
+
+      return {
+        ...current,
+        [sourceColumn]: nextSourceItems,
+        [targetColumn]: nextTargetItems,
+      };
+    });
+  }
+
+  function handleDragCancel() {
+    setActiveId(null);
+  }
+
+  if (!tripId || Number.isNaN(parsedTripId)) {
+    return <Navigate to="/trips" replace/>;
+  }
 
   if (isPending) {
     return <p className="board-message">Loading dashboard...</p>;
@@ -41,25 +303,58 @@ export default function TripBoardPage() {
     return <p className="board-message error">Could not load trip dashboard.</p>;
   }
 
-  const hasMap =
-    trip.latitude !== null &&
-    trip.longitude !== null &&
-    !Number.isNaN(Number(trip.latitude)) &&
-    !Number.isNaN(Number(trip.longitude));
-
   return (
-    <main className="board-page">
-      <div className="board-surface">
-        <TripHeaderPanel trip={trip} />
+      <main className="board-page">
+        <div className="board-surface">
+          <TripHeaderPanel trip={trip}/>
 
-        <div className="board-grid">
-          <GroceryPanel tripId={parsedTripId} />
-          <PersonalListPanel tripId={parsedTripId} />
-          <NotesPanel tripId={parsedTripId} />
-          <WeatherPanel tripId={parsedTripId} />
-          {hasMap && <TripMapPanel trip={trip} />}
+          <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+          >
+            <section className="trip-board" aria-label="Trip dashboard modules">
+              {(Object.keys(layout) as ColumnId[]).map((columnId) => (
+                  <BoardColumn
+                      key={columnId}
+                      title={columnId}
+                      columnKey={columnId}
+                      items={layout[columnId]}
+                  >
+                    {layout[columnId].map((moduleId) => {
+                      const module = moduleLookup[moduleId];
+
+                      if (!module) {
+                        return null;
+                      }
+
+                      return (
+                          <BoardModuleCard
+                              key={module.id}
+                              moduleId={module.id}
+                              moduleType={module.type}
+                              title={module.title}
+                          >
+                            {renderModule(module)}
+                          </BoardModuleCard>
+                      );
+                    })}
+                  </BoardColumn>
+              ))}
+            </section>
+
+            <DragOverlay dropAnimation={{duration: 180, easing: "ease-out"}}>
+              {activeId ? (
+                  <BoardModuleCardPreview
+                      module={moduleLookup[activeId]}
+                  />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </div>
-      </div>
-    </main>
+      </main>
   );
 }

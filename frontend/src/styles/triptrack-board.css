@@ -3,23 +3,33 @@
 :root {
   --bg: #efe7dc;
   --surface: #fffaf3;
+  --surface-strong: #ffffff;
   --text: #111111;
-  --muted: #111111;
+  --muted: #667085;
   --border: #d8cbbb;
+  --shadow: 0 10px 28px rgba(58, 40, 24, 0.08);
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --space-1: 0.45rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.25rem;
+  --space-5: 1.5rem;
 
   --hero-bg: #f2e3cf;
   --hero-border: #d9c2a4;
 
   --grocery-bg: #f3e58d;
   --grocery-border: #d7c45d;
-
   --personal-bg: #cfe6c8;
   --personal-border: #a9c49d;
-
   --notes-bg: #efc4d2;
   --notes-border: #d59aae;
-
-  --shadow: 0 10px 28px rgba(58, 40, 24, 0.08);
+  --weather-bg: #c9ddf2;
+  --weather-border: #9db9d8;
+  --map-bg: #d8e7cf;
+  --map-border: #afc49f;
 }
 
 * {
@@ -37,30 +47,36 @@ body {
 
 .board-page {
   min-height: 100vh;
-  padding: 2rem;
+  padding: var(--space-3);
 }
 
 .board-surface {
   max-width: 1120px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.trip-hero-card,
+.board-module-card {
+  border: 1px solid var(--card-border, var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
 }
 
 .trip-hero-card {
   background: var(--hero-bg);
-  border: 1px solid var(--hero-border);
-  border-radius: 20px;
+  border-color: var(--hero-border);
   padding: 2rem;
-  box-shadow: var(--shadow);
-  margin-bottom: 1.5rem;
 }
 
 .trip-hero-kicker {
-  margin: 0 0 0.45rem;
+  margin: 0 0 var(--space-1);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #111111;
 }
 
 .trip-hero-title {
@@ -68,268 +84,178 @@ body {
   font-size: clamp(2rem, 4vw, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.03em;
-  color: #111111;
 }
 
 .trip-hero-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-2);
   margin-top: 0.95rem;
-  color: #111111;
   font-size: 0.96rem;
   font-weight: 500;
 }
 
 .trip-hero-description {
-  margin-top: 1rem;
+  margin-top: var(--space-3);
   max-width: 68ch;
   line-height: 1.7;
-  color: #111111;
 }
 
-.board-grid {
+.trip-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
   align-items: start;
 }
 
-.sticky-note {
-  border-radius: 18px;
-  padding: 1.25rem 1.2rem;
-  box-shadow: var(--shadow);
-  min-height: 280px;
-  border: 1px solid transparent;
+.trip-board-column,
+.trip-board-column-stack,
+.board-module-card__body,
+.panel-item-main {
+  min-width: 0;
 }
 
-.sticky-note.grocery {
-  background: var(--grocery-bg);
-  border-color: var(--grocery-border);
+.trip-board-column-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.sticky-note.personal {
-  background: var(--personal-bg);
-  border-color: var(--personal-border);
+.board-module-card {
+  --card-bg: var(--surface-strong);
+  --card-border: var(--border);
+  background: var(--card-bg);
+  padding: var(--space-3);
 }
 
-.sticky-note.notes {
-  background: var(--notes-bg);
-  border-color: var(--notes-border);
+.board-module-card--grocery {
+  --card-bg: var(--grocery-bg);
+  --card-border: var(--grocery-border);
 }
 
-.sticky-title {
-  margin: 0 0 1rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #111111;
+.board-module-card--personal {
+  --card-bg: var(--personal-bg);
+  --card-border: var(--personal-border);
 }
 
-.sticky-list,
+.board-module-card--notes {
+  --card-bg: var(--notes-bg);
+  --card-border: var(--notes-border);
+}
+
+.board-module-card--weather {
+  --card-bg: var(--weather-bg);
+  --card-border: var(--weather-border);
+}
+
+.board-module-card--map {
+  --card-bg: var(--map-bg);
+  --card-border: var(--map-border);
+}
+
+.board-module-card__header {
+  margin-bottom: var(--space-2);
+}
+
+.board-module-card__title {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.panel-list,
+.weather-list,
 .notes-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-.sticky-list-item,
-.note-card {
-  padding: 0.75rem 0;
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.panel-list-item,
+.note-card,
+.weather-row {
   border-bottom: 1px solid rgba(17, 17, 17, 0.12);
+  padding: var(--space-2) 0;
 }
 
-.sticky-list-item:last-child,
-.note-card:last-child {
+.panel-list-item:first-child,
+.note-card:first-child,
+.weather-row:first-child {
+  padding-top: 0;
+}
+
+.panel-list-item:last-child,
+.note-card:last-child,
+.weather-row:last-child {
   border-bottom: 0;
+  padding-bottom: 0;
 }
 
-.sticky-list-item {
+.panel-list-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
-.item-main {
-  min-width: 0;
+.panel-item-main {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.item-name,
-.note-title {
+.panel-item-name,
+.note-title,
+.weather-day-label {
   margin: 0;
   font-size: 0.98rem;
   font-weight: 700;
-  color: #111111;
 }
 
-.item-meta,
-.note-body {
+.panel-meta,
+.note-body,
+.weather-meta,
+.weather-day-summary,
+.weather-day-range,
+.weather-day-extra,
+.map-coordinates {
   margin: 0;
-  color: #111111;
-  font-size: 0.92rem;
-  line-height: 1.4;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
-.item-meta::before {
-  content: "•";
-  margin-right: 0.45rem;
-}
-
+.panel-check,
 .packed-check {
   flex-shrink: 0;
-  color: #111111;
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1;
 }
 
-.board-message {
-  padding: 2rem;
-  text-align: center;
-  color: #111111;
-}
-
-.board-message.error {
-  color: #7a1f1f;
-}
-
-@media (max-width: 720px) {
-  .board-page {
-    padding: 1rem;
-  }
-
-  .trip-hero-card,
-  .sticky-note {
-    padding: 1rem;
-    border-radius: 14px;
-  }
-
-  .board-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sticky-list-item {
-    align-items: flex-start;
-  }
-
-  .item-main {
-    white-space: normal;
-    flex-wrap: wrap;
-  }
-}
-
-.sticky-note.weather {
-  background: #c9ddf2;
-  border-color: #9db9d8;
-}
-
 .weather-current {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .weather-temp {
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
-  color: #111111;
 }
 
 .weather-summary {
   margin: 0.3rem 0 0;
-  color: #111111;
   font-size: 0.98rem;
   font-weight: 700;
-}
-
-.weather-meta {
-  margin: 0.25rem 0 0;
-  color: #111111;
-  font-size: 0.9rem;
-}
-
-.weather-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.weather-row {
-  padding: 0.8rem 0;
-  border-bottom: 1px solid rgba(17, 17, 17, 0.12);
-}
-
-.weather-row:last-child {
-  border-bottom: 0;
-}
-
-.weather-day-main {
-  margin-bottom: 0.35rem;
-}
-
-.weather-day-label {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #111111;
-}
-
-.weather-day-summary {
-  margin: 0.15rem 0 0;
-  font-size: 0.9rem;
-  color: #111111;
-}
-
-.weather-day-range {
-  margin: 0.25rem 0;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #111111;
-}
-
-.weather-day-extra {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.8rem;
-  font-size: 0.84rem;
-  color: #111111;
-}
-
-.sticky-note.map-panel {
-  background: #d8e7cf;
-  border-color: #afc49f;
-}
-
-.trip-map-shell {
-  overflow: hidden;
-  border-radius: 14px;
-  border: 1px solid rgba(17, 17, 17, 0.12);
-  margin-top: 0.4rem;
-  background: #f7f7f7;
-}
-
-.trip-map {
-  width: 100%;
-  height: 260px;
-}
-
-.map-coordinates {
-  margin: 0.8rem 0 0;
-  font-size: 0.86rem;
-  color: #111111;
 }
 
 .weather-day-heading {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: var(--space-1);
 }
 
 .weather-icon {
@@ -339,8 +265,38 @@ body {
   color: rgba(17, 17, 17, 0.78);
 }
 
-.weather-day-label {
-  margin: 0;
+.trip-map-shell {
+  overflow: hidden;
+  margin-top: 0.4rem;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: var(--radius-md);
+  background: #f7f7f7;
+}
+
+.trip-map {
+  width: 100%;
+  height: 260px;
+}
+
+.board-message {
+  padding: 2rem;
+  text-align: center;
+}
+
+.board-message.error {
+  color: #a12626;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .trip-list-page {
@@ -353,18 +309,15 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.trip-list-page__header h1 {
-  margin: 0 0 0.5rem;
-}
-
-.trip-list-page__header p {
+.trip-list-page__header h1,
+.trip-list-card__header h2 {
   margin: 0;
-  color: #666;
 }
 
-.trip-list-page__empty {
-  padding: 1rem 0;
-  color: #666;
+.trip-list-page__header p,
+.trip-list-page__empty,
+.trip-list-card__meta {
+  color: #555;
 }
 
 .trip-list-page__grid {
@@ -392,18 +345,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-2);
   margin-bottom: 0.5rem;
-}
-
-.trip-list-card__header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.trip-list-card__meta {
-  margin: 0.25rem 0;
-  color: #555;
 }
 
 .trip-list-card__badge {
@@ -421,4 +364,73 @@ body {
   margin-top: 0.5rem;
   color: #8a5a00;
   font-weight: 500;
+}
+
+@media (max-width: 980px) {
+  .trip-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .board-page {
+    padding: 1rem;
+  }
+
+  .trip-hero-card,
+  .board-module-card {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+  }
+}
+
+.board-module-card {
+  cursor: grab;
+}
+
+.board-module-card__header {
+  cursor: grab;
+}
+
+.board-module-card--dragging {
+  opacity: 0.55;
+  box-shadow: 0 18px 36px rgba(58, 40, 24, 0.16);
+}
+
+.board-module-card:active,
+.board-module-card__header:active {
+  cursor: grabbing;
+}
+
+.trip-board-empty {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(17, 17, 17, 0.24);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.trip-board-column-stack--over {
+  outline: 2px dashed rgba(17, 17, 17, 0.22);
+  outline-offset: 6px;
+  border-radius: 16px;
+}
+
+.board-module-card--overlay {
+  width: min(360px, 90vw);
+  box-shadow: 0 22px 44px rgba(58, 40, 24, 0.18);
+  opacity: 0.96;
+  transform: rotate(1deg);
+}
+
+.board-module-card--dragging {
+  opacity: 0.35;
+}
+
+.board-module-card--overlay .board-module-card__body {
+  pointer-events: none;
 }
