@@ -1,4 +1,5 @@
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
+import throttle from "lodash/throttle";
 import {useQuery} from "@tanstack/react-query";
 import {Navigate, useParams} from "react-router-dom";
 import {
@@ -139,6 +140,67 @@ export default function TripBoardPage() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  const throttledCrossColumnMove = useRef(
+  throttle(
+    (
+      activeId: string,
+      overId: string,
+      _getLayout: () => BoardLayout,
+      setLayout: React.Dispatch<React.SetStateAction<BoardLayout>>
+    ) => {
+      setLayout((current) => {
+        const sourceColumn = findContainer(current, activeId);
+        const targetColumn = findContainer(current, overId);
+
+        if (!sourceColumn || !targetColumn) {
+          return current;
+        }
+
+        if (sourceColumn === targetColumn) {
+          return current;
+        }
+
+        const sourceItems = current[sourceColumn];
+        const targetItems = current[targetColumn];
+
+        const sourceIndex = sourceItems.indexOf(activeId);
+        if (sourceIndex === -1) {
+          return current;
+        }
+
+        const alreadyInTarget = targetItems.includes(activeId);
+        if (alreadyInTarget) {
+          return current;
+        }
+
+        const nextSourceItems = [...sourceItems];
+        const nextTargetItems = [...targetItems];
+
+        nextSourceItems.splice(sourceIndex, 1);
+
+        if (isColumnId(overId)) {
+          nextTargetItems.push(activeId);
+        } else {
+          const targetIndex = nextTargetItems.indexOf(overId);
+          if (targetIndex === -1) {
+            return current;
+          }
+          nextTargetItems.splice(targetIndex, 0, activeId);
+        }
+
+        return {
+          ...current,
+          [sourceColumn]: nextSourceItems,
+          [targetColumn]: nextTargetItems,
+        };
+      });
+    },
+    80,
+    { leading: true, trailing: true }
+  )
+);
+
+
   useEffect(() => {
     setLayout(buildInitialLayout(moduleInstances));
   }, [moduleInstances]);
@@ -239,52 +301,7 @@ export default function TripBoardPage() {
       return;
     }
 
-    setLayout((current) => {
-      const sourceColumn = findContainer(current, activeId);
-      const targetColumn = findContainer(current, overId);
-
-      if (!sourceColumn || !targetColumn) {
-        return current;
-      }
-
-      if (sourceColumn === targetColumn) {
-        return current;
-      }
-
-      const sourceItems = current[sourceColumn];
-      const targetItems = current[targetColumn];
-
-      const sourceIndex = sourceItems.indexOf(activeId);
-      if (sourceIndex === -1) {
-        return current;
-      }
-
-      const alreadyInTarget = targetItems.includes(activeId);
-      if (alreadyInTarget) {
-        return current;
-      }
-
-      const nextSourceItems = [...sourceItems];
-      const nextTargetItems = [...targetItems];
-
-      nextSourceItems.splice(sourceIndex, 1);
-
-      if (isColumnId(overId)) {
-        nextTargetItems.push(activeId);
-      } else {
-        const targetIndex = nextTargetItems.indexOf(overId);
-        if (targetIndex === -1) {
-          return current;
-        }
-        nextTargetItems.splice(targetIndex, 0, activeId);
-      }
-
-      return {
-        ...current,
-        [sourceColumn]: nextSourceItems,
-        [targetColumn]: nextTargetItems,
-      };
-    });
+    throttledCrossColumnMove.current(activeId, overId, () => layout, setLayout);
   }
 
   function handleDragCancel() {
