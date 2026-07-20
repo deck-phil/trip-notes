@@ -44,21 +44,19 @@ class TripGroceryListSummarySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "created_by",
             "created_at",
         ]
         read_only_fields = fields
 
 
 class TripPersonalListSummarySerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
-
     class Meta:
         model = PersonalList
         fields = [
             "id",
             "name",
-            "user",
-            "username",
+            "created_by",
             "created_at",
         ]
         read_only_fields = fields
@@ -67,7 +65,7 @@ class TripPersonalListSummarySerializer(serializers.ModelSerializer):
 class TripNoteRefSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripNote
-        fields = ["id", "title"]
+        fields = ["id", "title", "created_by", "created_at"]
         read_only_fields = fields
 
 
@@ -179,7 +177,7 @@ class PersonalListSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "trip",
-            "user",
+            "created_by",
             "created_at",
             "items",
         ]

@@ -7,6 +7,7 @@ type Props = {
   moduleType: string;
   title: string;
   children: ReactNode;
+  actions?: ReactNode;
 };
 
 export default function BoardModuleCard({
@@ -14,6 +15,7 @@ export default function BoardModuleCard({
                                           moduleType,
                                           title,
                                           children,
+                                          actions,
                                         }: Props) {
   const {
     attributes,
@@ -46,13 +48,23 @@ export default function BoardModuleCard({
           data-module-type={moduleType}
           aria-label={title}
       >
-        <header
-            className="board-module-card__header board-module-card__header--handle"
-            {...attributes}
-            {...listeners}
-        >
-          <h3 className="board-module-card__title">{title}</h3>
-          <span className="board-module-card__handle-icon" aria-hidden="true">⋮⋮</span>
+        <header className="board-module-card__header">
+          <div
+              className="board-module-card__header-main board-module-card__header--handle"
+              {...attributes}
+              {...listeners}
+          >
+            <h3 className="board-module-card__title">{title}</h3>
+            <span className="board-module-card__handle-icon" aria-hidden="true">
+            ⋮⋮
+          </span>
+          </div>
+
+          {actions ? (
+              <div className="board-module-card__actions">
+                {actions}
+              </div>
+          ) : null}
         </header>
 
         <div className="board-module-card__body">{children}</div>

@@ -3,9 +3,10 @@ from django.contrib.auth import logout, login, authenticate
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, permissions, views, response, status
-from .models import Trip, TripNote, PersonalList, GroceryList
+from .models import Trip, TripNote, PersonalList, GroceryList, GroceryItem
 from .serializers import TripSerializer, NoteSerializer, \
-    TripWeatherSerializer, CurrentUserSerializer, TripListSerializer, GroceryListSerializer, PersonalListSerializer
+    TripWeatherSerializer, CurrentUserSerializer, TripListSerializer, GroceryListSerializer, PersonalListSerializer, \
+    GroceryItemSerializer
 from .weather_service import get_trip_weather
 
 
@@ -113,6 +114,40 @@ class TripGroceryListDetailView(generics.RetrieveAPIView):
             .order_by("created_at", "name")
         )
 
+class TripGroceryItemCreateView(generics.CreateAPIView):
+    serializer_class = GroceryItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_grocery_list(self):
+        return generics.get_object_or_404(
+            GroceryList.objects.filter(trip_id=self.kwargs["trip_id"]),
+            id=self.kwargs["grocery_list_id"],
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(
+            grocery_list=self.get_grocery_list(),
+            added_by=self.request.user,
+        )
+
+
+class TripGroceryItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = GroceryItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+    lookup_url_kwarg = "item_id"
+
+    def get_queryset(self):
+        return (
+            GroceryItem.objects
+            .filter(
+                grocery_list_id=self.kwargs["grocery_list_id"],
+                grocery_list__trip_id=self.kwargs["trip_id"],
+            )
+            .select_related("added_by", "grocery_list")
+            .order_by("name")
+        )
+
 
 class TripNoteDetailView(generics.RetrieveAPIView):
     serializer_class = NoteSerializer
@@ -141,9 +176,9 @@ class TripPersonalListDetailView(generics.RetrieveAPIView):
         return (
             PersonalList.objects
             .filter(trip_id=trip_id)
-            .select_related("user")
+            .select_related("created_by")
             .prefetch_related("items")
-            .order_by("user__username", "created_at", "name")
+            .order_by("-created_at", "name")
         )
 
 

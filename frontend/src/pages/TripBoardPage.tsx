@@ -15,7 +15,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import {arrayMove, sortableKeyboardCoordinates} from "@dnd-kit/sortable";
-import {api, ApiError} from "../services/api";
+import {api} from "../services/api";
 import type {Trip} from "../types/trip";
 import TripHeaderPanel from "../components/TripHeaderPanel";
 import GroceryPanel from "../components/GroceryPanel";
@@ -27,6 +27,8 @@ import BoardColumn from "../components/board/BoardColumn";
 import BoardModuleCard from "../components/board/BoardModuleCard";
 import "../styles/triptrack-board.css";
 import BoardModuleCardPreview from "../components/board/BoardModuleCardPreview.tsx";
+import {ApiError} from "../services/http.ts";
+import {useAuth} from "../auth/AuthContext.tsx";
 
 type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
 
@@ -41,6 +43,7 @@ interface ModuleInstance {
   type: ModuleType;
   title: string;
   props?: ModuleProps;
+  created_by?: number | null;
 }
 
 type ColumnId = "column-1" | "column-2" | "column-3";
@@ -91,7 +94,7 @@ export default function TripBoardPage() {
   }
 
   const requiredTripId = tripId;
-
+  const {user: currentUser} = useAuth();
   const {
     data: trip,
     isPending,
@@ -127,13 +130,15 @@ export default function TripBoardPage() {
       type: "grocery",
       title: list.name,
       props: {groceryListId: list.id},
+      created_by: list.created_by,
     }));
 
     const personalModules: ModuleInstance[] = trip.personal_lists.map((list) => ({
       id: `personal-${list.id}`,
       type: "personal",
-      title: `${list.username} · ${list.name}`,
+      title: `${list.name}`,
       props: {personalListId: list.id},
+      created_by: list.created_by,
     }));
 
     const noteModules: ModuleInstance[] = trip.notes.map((note) => ({
@@ -141,6 +146,7 @@ export default function TripBoardPage() {
       type: "notes",
       title: note.title,
       props: {noteId: note.id},
+      created_by: note.created_by,
     }));
 
     const sharedModules: ModuleInstance[] = [
@@ -170,7 +176,7 @@ export default function TripBoardPage() {
   );
 
   const [activeId, setActiveId] = useState<string | null>(null);
-
+  const [editingModules, setEditingModules] = useState<Record<string, boolean>>({});
   const throttledCrossColumnMove = useRef(
       throttle(
           (
@@ -275,7 +281,7 @@ export default function TripBoardPage() {
       })
   );
 
-  function renderModule(instance: ModuleInstance) {
+  function renderModule(instance: ModuleInstance, isEditMode = false, canEdit = false) {
     if (!trip) {
       return null;
     }
@@ -286,6 +292,8 @@ export default function TripBoardPage() {
             <GroceryPanel
                 tripId={requiredTripId}
                 groceryListId={(instance.props as { groceryListId: number }).groceryListId}
+                canEdit={canEdit}
+                isEditMode={isEditMode}
             />
         );
 
@@ -387,6 +395,17 @@ export default function TripBoardPage() {
     setActiveId(null);
   }
 
+  function isModuleEditing(moduleId: string) {
+    return !!editingModules[moduleId];
+  }
+
+  function toggleModuleEditing(moduleId: string) {
+    setEditingModules((current) => ({
+      ...current,
+      [moduleId]: !current[moduleId],
+    }));
+  }
+
   if (isPending) {
     return <p className="board-message">Loading dashboard...</p>;
   }
@@ -423,14 +442,31 @@ export default function TripBoardPage() {
                         return null;
                       }
 
+                      const isEditing = isModuleEditing(module.id);
+                      const canEditModule = ['grocery', 'notes', 'personal'].includes(module.type) && (trip.is_organizer || module.created_by === currentUser?.id);
+
                       return (
                           <BoardModuleCard
                               key={module.id}
                               moduleId={module.id}
                               moduleType={module.type}
                               title={module.title}
+                              actions={
+                                canEditModule ? (
+                                    <button
+                                        type="button"
+                                        className="panel-mode-toggle"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          toggleModuleEditing(module.id);
+                                        }}
+                                    >
+                                      {isEditing ? "Done editing" : "Edit"}
+                                    </button>
+                                ) : null
+                              }
                           >
-                            {renderModule(module)}
+                            {renderModule(module, isEditing, canEditModule)}
                           </BoardModuleCard>
                       );
                     })}

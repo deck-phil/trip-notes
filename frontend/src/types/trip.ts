@@ -11,20 +11,22 @@ export interface TripListItem {
 export type TripGroceryListSummary = {
   id: number;
   name: string;
+  created_by: number;
   created_at: string;
 };
 
 export type TripPersonalListSummary = {
   id: number;
   name: string;
-  user: number;
-  username: string;
+  created_by: number;
   created_at: string;
 };
 
 export type TripNoteSummary = {
   id: number;
   title: string;
+  created_by: number;
+  created_at: string;
 };
 
 export type Trip = {
@@ -62,7 +64,7 @@ export type GroceryList = {
 
 export type PersonalItem = {
   id: number;
-  name: string;
+  created_by: string | null;
   quantity: string;
   is_packed: boolean;
   notes: string;

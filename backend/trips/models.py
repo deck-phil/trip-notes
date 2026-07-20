@@ -142,20 +142,21 @@ class PersonalList(models.Model):
         on_delete=models.CASCADE,
         related_name="personal_lists",
     )
-    user = models.ForeignKey(
+    name = models.CharField(max_length=200)
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="personal_lists",
     )
-    name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["user__username", "created_at", "name"]
-        unique_together = ("trip", "user", "name")
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.user} - {self.name}"
+        return f"{self.created_by} - {self.name}"
 
 
 class PersonalItem(models.Model):
