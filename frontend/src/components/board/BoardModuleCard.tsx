@@ -46,8 +46,13 @@ export default function BoardModuleCard({
           data-module-type={moduleType}
           aria-label={title}
       >
-        <header className="board-module-card__header" {...attributes} {...listeners}>
+        <header
+            className="board-module-card__header board-module-card__header--handle"
+            {...attributes}
+            {...listeners}
+        >
           <h3 className="board-module-card__title">{title}</h3>
+          <span className="board-module-card__handle-icon" aria-hidden="true">⋮⋮</span>
         </header>
 
         <div className="board-module-card__body">{children}</div>

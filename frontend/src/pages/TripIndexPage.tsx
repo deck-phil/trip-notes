@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../services/api";
-import type { TripListItem } from "../types/trip";
+import {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {api} from "../services/api";
+import type {TripListItem} from "../types/trip";
 
 export default function TripIndexPage() {
   const navigate = useNavigate();
@@ -19,15 +19,15 @@ export default function TripIndexPage() {
         }
 
         if (trips.length === 1) {
-          navigate(`/board/${trips[0].id}`, { replace: true });
+          navigate(`/board/${trips[0].id}`, {replace: true});
           return;
         }
 
-        navigate("/trips", { replace: true });
+        navigate("/trips", {replace: true});
       } catch (err) {
         if (!cancelled) {
           const message =
-            err instanceof Error ? err.message : "Could not load trips.";
+              err instanceof Error ? err.message : "Could not load trips.";
           setError(message);
         }
       }

@@ -434,3 +434,39 @@ body {
 .board-module-card--overlay .board-module-card__body {
   pointer-events: none;
 }
+
+.board-module-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+}
+
+.board-module-card__header--handle {
+  cursor: grab;
+}
+
+.board-module-card__header--handle:active {
+  cursor: grabbing;
+}
+
+.board-module-card__handle-icon {
+  font-size: 1rem;
+}
+
+.board-module-card--dragging {
+  opacity: 0.4;
+}
+
+.board-module-card__body {
+  cursor: default;
+}
+
+.trip-map--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f7f7;
+}

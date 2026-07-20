@@ -1,12 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../services/api";
-import type { TripNote } from "../types/trip";
+import {useQuery} from "@tanstack/react-query";
+import {api} from "../services/api";
+import type {TripNote} from "../types/trip";
 
 type Props = {
   tripId: number;
 };
 
-export default function NotesPanel({ tripId }: Props) {
+export default function NotesPanel({tripId}: Props) {
   const {
     data: notes = [],
     isPending,
@@ -25,13 +25,13 @@ export default function NotesPanel({ tripId }: Props) {
   }
 
   return (
-    <ul className="notes-list">
-      {notes.map((note) => (
-        <li key={note.id} className="note-card">
-          <p className="note-title">{note.title}</p>
-          <p className="note-body">{note.body}</p>
-        </li>
-      ))}
-    </ul>
+      <ul className="notes-list">
+        {notes.map((note) => (
+            <li key={note.id} className="note-card">
+              <p className="note-title">{note.title}</p>
+              <p className="note-body">{note.body}</p>
+            </li>
+        ))}
+      </ul>
   );
 }
