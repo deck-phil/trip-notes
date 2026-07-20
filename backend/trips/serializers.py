@@ -1,7 +1,7 @@
 # trips/serializers.py
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Trip, GroceryItem, TripNote, PersonalItem, TripMember
+from .models import Trip, GroceryItem, TripNote, PersonalItem, TripMember, PersonalList, GroceryList
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
@@ -37,11 +37,48 @@ class TripListSerializer(serializers.ModelSerializer):
             role=TripMember.Role.ORGANIZER,
         ).exists()
 
+
+class TripGroceryListSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryList
+        fields = [
+            "id",
+            "name",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class TripPersonalListSummarySerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta:
+        model = PersonalList
+        fields = [
+            "id",
+            "name",
+            "user",
+            "username",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class TripNoteRefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TripNote
+        fields = ["id", "title"]
+        read_only_fields = fields
+
+
 class TripSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(required=False, allow_null=True)
     longitude = serializers.FloatField(required=False, allow_null=True)
     is_member = serializers.SerializerMethodField()
     is_organizer = serializers.SerializerMethodField()
+    grocery_lists = TripGroceryListSummarySerializer(many=True, read_only=True)
+    personal_lists = TripPersonalListSummarySerializer(many=True, read_only=True)
+    notes = TripNoteRefSerializer(many=True, read_only=True)
 
     class Meta:
         model = Trip
@@ -56,6 +93,9 @@ class TripSerializer(serializers.ModelSerializer):
             "longitude",
             "is_member",
             "is_organizer",
+            "grocery_lists",
+            "personal_lists",
+            "notes",
         ]
 
     def _get_membership(self, obj):
@@ -73,6 +113,7 @@ class TripSerializer(serializers.ModelSerializer):
             membership and membership.role == TripMember.Role.ORGANIZER
         )
 
+
 class GroceryItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroceryItem
@@ -81,12 +122,27 @@ class GroceryItemSerializer(serializers.ModelSerializer):
             "name",
             "quantity",
             "is_packed",
-            "trip",
         ]
         read_only_fields = ["id"]
 
 
-class TripNoteSerializer(serializers.ModelSerializer):
+class GroceryListSerializer(serializers.ModelSerializer):
+    items = GroceryItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = GroceryList
+        fields = [
+            "id",
+            "name",
+            "trip",
+            "created_by",
+            "created_at",
+            "items",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripNote
         fields = [
@@ -94,9 +150,11 @@ class TripNoteSerializer(serializers.ModelSerializer):
             "title",
             "body",
             "created_at",
+            "updated_at",
             "trip",
+            "created_by",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class PersonalItemSerializer(serializers.ModelSerializer):
@@ -108,10 +166,25 @@ class PersonalItemSerializer(serializers.ModelSerializer):
             "quantity",
             "notes",
             "is_packed",
-            "trip",
-            "user",
         ]
         read_only_fields = ["id"]
+
+
+class PersonalListSerializer(serializers.ModelSerializer):
+    items = PersonalItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PersonalList
+        fields = [
+            "id",
+            "name",
+            "trip",
+            "user",
+            "created_at",
+            "items",
+        ]
+        read_only_fields = ["id", "created_at"]
+
 
 class WeatherCurrentSerializer(serializers.Serializer):
     time = serializers.CharField(allow_null=True)

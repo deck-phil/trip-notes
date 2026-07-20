@@ -3,35 +3,32 @@ import {api} from "../services/api";
 import type {TripNote} from "../types/trip";
 
 type Props = {
-  tripId: number;
+  tripId: string;
+  noteId: number;
 };
 
-export default function NotesPanel({tripId}: Props) {
+export default function NotesPanel({tripId, noteId}: Props) {
   const {
-    data: notes = [],
+    data: note,
     isPending,
     isError,
-  } = useQuery<TripNote[]>({
-    queryKey: ["notes", tripId],
-    queryFn: () => api.getNotes(tripId),
+  } = useQuery<TripNote>({
+    queryKey: ["trip", tripId, "note", noteId],
+    queryFn: () => api.getNote(tripId, noteId),
   });
 
   if (isPending) {
-    return <p className="panel-meta">Loading notes...</p>;
+    return <p className="panel-meta">Loading note...</p>;
   }
 
-  if (isError || notes.length === 0) {
+  if (isError || !note) {
     return null;
   }
 
   return (
-      <ul className="notes-list">
-        {notes.map((note) => (
-            <li key={note.id} className="note-card">
-              <p className="note-title">{note.title}</p>
-              <p className="note-body">{note.body}</p>
-            </li>
-        ))}
-      </ul>
+      <div className="note-card">
+        <p className="note-title">{note.title}</p>
+        <p className="note-body">{note.body}</p>
+      </div>
   );
 }

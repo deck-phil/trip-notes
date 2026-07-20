@@ -3,10 +3,11 @@ from django.contrib.auth import logout, login, authenticate
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, permissions, views, response, status
-from .models import Trip, GroceryItem, TripNote, PersonalItem
-from .serializers import TripSerializer, GroceryItemSerializer, TripNoteSerializer, PersonalItemSerializer, \
-    TripWeatherSerializer, CurrentUserSerializer, TripListSerializer
+from .models import Trip, TripNote, PersonalList, GroceryList
+from .serializers import TripSerializer, NoteSerializer, \
+    TripWeatherSerializer, CurrentUserSerializer, TripListSerializer, GroceryListSerializer, PersonalListSerializer
 from .weather_service import get_trip_weather
+
 
 ## User Management ##
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -67,6 +68,7 @@ class CurrentUserView(views.APIView):
             status=status.HTTP_200_OK,
         )
 
+
 ## Trip Management ##
 
 
@@ -82,6 +84,7 @@ class TripListView(generics.ListAPIView):
             .order_by("start_date", "name")
         )
 
+
 class TripDetailView(generics.RetrieveAPIView):
     serializer_class = TripSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -93,31 +96,55 @@ class TripDetailView(generics.RetrieveAPIView):
             .distinct()
         )
 
-class TripGroceryListView(generics.ListAPIView):
-    serializer_class = GroceryItemSerializer
+
+class TripGroceryListDetailView(generics.RetrieveAPIView):
+    serializer_class = GroceryListSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+    lookup_url_kwarg = "grocery_list_id"
 
     def get_queryset(self):
         trip_id = self.kwargs["trip_id"]
-        return GroceryItem.objects.filter(trip_id=trip_id).order_by("name")
+        return (
+            GroceryList.objects
+            .filter(trip_id=trip_id)
+            .select_related("created_by")
+            .prefetch_related("items", "items__added_by")
+            .order_by("created_at", "name")
+        )
 
 
-class TripNoteListView(generics.ListAPIView):
-    serializer_class = TripNoteSerializer
+class TripNoteDetailView(generics.RetrieveAPIView):
+    serializer_class = NoteSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+    lookup_url_kwarg = "note_id"
 
     def get_queryset(self):
         trip_id = self.kwargs["trip_id"]
-        return TripNote.objects.filter(trip_id=trip_id).order_by("-created_at")
+        return (
+            TripNote.objects
+            .filter(trip_id=trip_id)
+            .select_related("created_by")
+            .order_by("-created_at")
+        )
 
 
-class TripPersonalItemListView(generics.ListAPIView):
-    serializer_class = PersonalItemSerializer
+class TripPersonalListDetailView(generics.RetrieveAPIView):
+    serializer_class = PersonalListSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+    lookup_url_kwarg = "personal_list_id"
 
     def get_queryset(self):
         trip_id = self.kwargs["trip_id"]
-        return PersonalItem.objects.filter(trip_id=trip_id).order_by("name")
+        return (
+            PersonalList.objects
+            .filter(trip_id=trip_id)
+            .select_related("user")
+            .prefetch_related("items")
+            .order_by("user__username", "created_at", "name")
+        )
 
 
 class TripWeatherView(views.APIView):
@@ -130,7 +157,8 @@ class TripWeatherView(views.APIView):
             return response.Response({"detail": "Trip not found."}, status=status.HTTP_404_NOT_FOUND, )
 
         if trip.latitude is None or trip.longitude is None:
-            return response.Response({"detail": "Trip does not have latitude/longitude set."}, status=status.HTTP_400_BAD_REQUEST, )
+            return response.Response({"detail": "Trip does not have latitude/longitude set."},
+                                     status=status.HTTP_400_BAD_REQUEST, )
 
         if trip.start_date > trip.end_date:
             return response.Response({"detail": "Trip dates are invalid."}, status=status.HTTP_400_BAD_REQUEST, )
@@ -143,7 +171,8 @@ class TripWeatherView(views.APIView):
                 end_date=trip.end_date,
             )
         except requests.RequestException:
-            return response.Response({"detail": "Could not load weather forecast."}, status=status.HTTP_502_BAD_GATEWAY, )
+            return response.Response({"detail": "Could not load weather forecast."},
+                                     status=status.HTTP_502_BAD_GATEWAY, )
 
         serializer = TripWeatherSerializer(weather_data)
         return response.Response(serializer.data)

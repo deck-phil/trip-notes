@@ -8,8 +8,27 @@ export interface TripListItem {
   is_organizer?: boolean;
 }
 
-export type Trip = {
+export type TripGroceryListSummary = {
   id: number;
+  name: string;
+  created_at: string;
+};
+
+export type TripPersonalListSummary = {
+  id: number;
+  name: string;
+  user: number;
+  username: string;
+  created_at: string;
+};
+
+export type TripNoteSummary = {
+  id: number;
+  title: string;
+};
+
+export type Trip = {
+  id: string;
   name: string;
   location: string;
   description: string;
@@ -17,6 +36,11 @@ export type Trip = {
   end_date: string;
   latitude: number | null;
   longitude: number | null;
+  is_member: boolean;
+  is_organizer: boolean;
+  grocery_lists: TripGroceryListSummary[];
+  personal_lists: TripPersonalListSummary[];
+  notes: TripNoteSummary[];
 };
 
 export type GroceryItem = {
@@ -24,25 +48,43 @@ export type GroceryItem = {
   name: string;
   quantity: string;
   is_packed: boolean;
-  trip: number;
+  grocery_list: string;
+};
+
+export type GroceryList = {
+  id: string;
+  name: string;
+  trip: string;
+  created_by: string | null;
+  created_at: string;
+  items: GroceryItem[];
 };
 
 export type PersonalItem = {
   id: number;
   name: string;
   quantity: string;
-  notes: string;
   is_packed: boolean;
-  trip: number;
+  notes: string;
+};
+
+export type PersonalList = {
+  id: number;
+  name: string;
   user: number;
+  username: string;
+  created_at: string;
+  items: PersonalItem[];
 };
 
 export type TripNote = {
-  id: number;
+  id: string;
   title: string;
   body: string;
   created_at: string;
-  trip: number;
+  updated_at: string;
+  trip: string;
+  created_by: string | null;
 };
 
 export type WeatherCurrent = {

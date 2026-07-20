@@ -4,7 +4,7 @@ import type {TripWeather} from "../types/trip";
 import {getWeatherIcon} from "./WeatherIcons";
 
 type Props = {
-  tripId: number;
+  tripId: string;
 };
 
 function formatNumber(value: number | null, unit = "") {

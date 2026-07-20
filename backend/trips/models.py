@@ -1,9 +1,13 @@
+import uuid
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
 class Trip(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     name = models.CharField(max_length=200)
     location = models.CharField(
         max_length=200,
@@ -20,10 +24,7 @@ class Trip(models.Model):
         decimal_places=6,
         null=True,
         blank=True,
-        validators=[
-            MinValueValidator(-90),
-            MaxValueValidator(90),
-        ],
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
         help_text="Latitude in decimal degrees, for example 47.250376",
     )
     longitude = models.DecimalField(
@@ -31,10 +32,7 @@ class Trip(models.Model):
         decimal_places=6,
         null=True,
         blank=True,
-        validators=[
-            MinValueValidator(-180),
-            MaxValueValidator(180),
-        ],
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
         help_text="Longitude in decimal degrees, for example -79.890442",
     )
 
@@ -90,11 +88,34 @@ class TripMember(models.Model):
         return f"{self.user} - {self.trip} ({self.role})"
 
 
-class GroceryItem(models.Model):
+class GroceryList(models.Model):
     trip = models.ForeignKey(
         Trip,
         on_delete=models.CASCADE,
-        related_name="grocery_items",
+        related_name="grocery_lists",
+    )
+    name = models.CharField(max_length=200)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_grocery_lists",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class GroceryItem(models.Model):
+    grocery_list = models.ForeignKey(
+        GroceryList,
+        on_delete=models.CASCADE,
+        related_name="items",
     )
     name = models.CharField(max_length=200)
     quantity = models.CharField(max_length=100, blank=True)
@@ -115,16 +136,33 @@ class GroceryItem(models.Model):
         return self.name
 
 
-class PersonalItem(models.Model):
+class PersonalList(models.Model):
     trip = models.ForeignKey(
         Trip,
         on_delete=models.CASCADE,
-        related_name="personal_items",
+        related_name="personal_lists",
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="personal_items",
+        related_name="personal_lists",
+    )
+    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["user__username", "created_at", "name"]
+        unique_together = ("trip", "user", "name")
+
+    def __str__(self):
+        return f"{self.user} - {self.name}"
+
+
+class PersonalItem(models.Model):
+    personal_list = models.ForeignKey(
+        PersonalList,
+        on_delete=models.CASCADE,
+        related_name="items",
     )
     name = models.CharField(max_length=200)
     quantity = models.CharField(max_length=100, blank=True)
@@ -133,10 +171,10 @@ class PersonalItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["user__username", "name"]
+        ordering = ["name"]
 
     def __str__(self):
-        return f"{self.user} - {self.name}"
+        return self.name
 
 
 class TripNote(models.Model):

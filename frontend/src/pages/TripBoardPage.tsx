@@ -5,7 +5,8 @@ import {Navigate, useParams} from "react-router-dom";
 import {
   closestCenter,
   DndContext,
-  type DragEndEvent, type DragOverEvent,
+  type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
@@ -13,10 +14,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
+import {arrayMove, sortableKeyboardCoordinates} from "@dnd-kit/sortable";
 import {api, ApiError} from "../services/api";
 import type {Trip} from "../types/trip";
 import TripHeaderPanel from "../components/TripHeaderPanel";
@@ -32,11 +30,17 @@ import BoardModuleCardPreview from "../components/board/BoardModuleCardPreview.t
 
 type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
 
+type ModuleProps =
+    | { groceryListId: number }
+    | { personalListId: number }
+    | { noteId: number }
+    | undefined;
+
 interface ModuleInstance {
   id: string;
   type: ModuleType;
   title: string;
-  props?: Record<string, unknown>;
+  props?: ModuleProps;
 }
 
 type ColumnId = "column-1" | "column-2" | "column-3";
@@ -81,16 +85,20 @@ function findContainer(layout: BoardLayout, id: string): ColumnId | null {
 
 export default function TripBoardPage() {
   const {tripId} = useParams<{ tripId: string }>();
-  const parsedTripId = Number(tripId);
+
+  if (!tripId) {
+    return <Navigate to="/trips" replace/>;
+  }
+
+  const requiredTripId = tripId;
 
   const {
     data: trip,
     isPending,
     isError,
   } = useQuery<Trip>({
-    queryKey: ["trip", parsedTripId],
-    queryFn: () => api.getTrip(parsedTripId),
-    enabled: !!tripId && !Number.isNaN(parsedTripId),
+    queryKey: ["trip", requiredTripId],
+    queryFn: () => api.getTrip(requiredTripId),
     retry: (failureCount, error) => {
       if (
           error instanceof ApiError &&
@@ -114,18 +122,41 @@ export default function TripBoardPage() {
       return [];
     }
 
-    const items: ModuleInstance[] = [
-      {id: "grocery-primary", type: "grocery", title: "Groceries"},
-      {id: "personal-primary", type: "personal", title: "Personal Items"},
-      {id: "notes-primary", type: "notes", title: "Notes"},
+    const groceryModules: ModuleInstance[] = trip.grocery_lists.map((list) => ({
+      id: `grocery-${list.id}`,
+      type: "grocery",
+      title: list.name,
+      props: {groceryListId: list.id},
+    }));
+
+    const personalModules: ModuleInstance[] = trip.personal_lists.map((list) => ({
+      id: `personal-${list.id}`,
+      type: "personal",
+      title: `${list.username} · ${list.name}`,
+      props: {personalListId: list.id},
+    }));
+
+    const noteModules: ModuleInstance[] = trip.notes.map((note) => ({
+      id: `note-${note.id}`,
+      type: "notes",
+      title: note.title,
+      props: {noteId: note.id},
+    }));
+
+    const sharedModules: ModuleInstance[] = [
       {id: "weather-primary", type: "weather", title: "Weather"},
     ];
 
     if (hasMap) {
-      items.push({id: "map-primary", type: "map", title: "Map"});
+      sharedModules.push({id: "map-primary", type: "map", title: "Map"});
     }
 
-    return items;
+    return [
+      ...groceryModules,
+      ...personalModules,
+      ...noteModules,
+      ...sharedModules,
+    ];
   }, [trip, hasMap]);
 
   const moduleLookup = useMemo(() => {
@@ -200,9 +231,37 @@ export default function TripBoardPage() {
       )
   );
 
-
   useEffect(() => {
-    setLayout(buildInitialLayout(moduleInstances));
+    setLayout((current) => {
+      const next = buildInitialLayout(moduleInstances);
+      const currentIds = new Set(Object.values(current).flat());
+      const nextIds = new Set(moduleInstances.map((module) => module.id));
+
+      if (currentIds.size === 0) {
+        return next;
+      }
+
+      const filteredCurrent: BoardLayout = {
+        "column-1": current["column-1"].filter((id) => nextIds.has(id)),
+        "column-2": current["column-2"].filter((id) => nextIds.has(id)),
+        "column-3": current["column-3"].filter((id) => nextIds.has(id)),
+      };
+
+      const placedIds = new Set(Object.values(filteredCurrent).flat());
+      const missingModules = moduleInstances.filter((module) => !placedIds.has(module.id));
+
+      if (missingModules.length === 0) {
+        return filteredCurrent;
+      }
+
+      const columnIds: ColumnId[] = ["column-1", "column-2", "column-3"];
+      missingModules.forEach((module, index) => {
+        const columnId = columnIds[index % columnIds.length];
+        filteredCurrent[columnId].push(module.id);
+      });
+
+      return filteredCurrent;
+    });
   }, [moduleInstances]);
 
   const sensors = useSensors(
@@ -223,15 +282,35 @@ export default function TripBoardPage() {
 
     switch (instance.type) {
       case "grocery":
-        return <GroceryPanel tripId={parsedTripId}/>;
+        return (
+            <GroceryPanel
+                tripId={requiredTripId}
+                groceryListId={(instance.props as { groceryListId: number }).groceryListId}
+            />
+        );
+
       case "personal":
-        return <PersonalListPanel tripId={parsedTripId}/>;
+        return (
+            <PersonalListPanel
+                tripId={requiredTripId}
+                personalListId={(instance.props as { personalListId: number }).personalListId}
+            />
+        );
+
       case "notes":
-        return <NotesPanel tripId={parsedTripId}/>;
+        return (
+            <NotesPanel
+                tripId={requiredTripId}
+                noteId={(instance.props as { noteId: number }).noteId}
+            />
+        );
+
       case "weather":
-        return <WeatherPanel tripId={parsedTripId}/>;
+        return <WeatherPanel tripId={requiredTripId}/>;
+
       case "map":
         return <TripMapPanel trip={trip}/>;
+
       default:
         return null;
     }
@@ -308,10 +387,6 @@ export default function TripBoardPage() {
     setActiveId(null);
   }
 
-  if (!tripId || Number.isNaN(parsedTripId)) {
-    return <Navigate to="/trips" replace/>;
-  }
-
   if (isPending) {
     return <p className="board-message">Loading dashboard...</p>;
   }
@@ -365,9 +440,7 @@ export default function TripBoardPage() {
 
             <DragOverlay dropAnimation={{duration: 180, easing: "ease-out"}}>
               {activeId ? (
-                  <BoardModuleCardPreview
-                      module={moduleLookup[activeId]}
-                  />
+                  <BoardModuleCardPreview module={moduleLookup[activeId]}/>
               ) : null}
             </DragOverlay>
           </DndContext>
