@@ -64,17 +64,17 @@ export type GroceryList = {
 
 export type PersonalItem = {
   id: number;
-  created_by: string | null;
+  name: string;
   quantity: string;
-  is_packed: boolean;
   notes: string;
+  is_packed: boolean;
 };
 
 export type PersonalList = {
   id: number;
   name: string;
-  user: number;
-  username: string;
+  trip: string;
+  created_by: number;
   created_at: string;
   items: PersonalItem[];
 };

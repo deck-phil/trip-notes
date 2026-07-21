@@ -302,6 +302,8 @@ export default function TripBoardPage() {
             <PersonalListPanel
                 tripId={requiredTripId}
                 personalListId={(instance.props as { personalListId: number }).personalListId}
+                canEdit={canEdit}
+                isEditMode={isEditMode}
             />
         );
 

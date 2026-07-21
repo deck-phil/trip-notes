@@ -1,7 +1,7 @@
 import {API_BASE, request} from "./http";
 import type {
   GroceryItem,
-  GroceryList,
+  GroceryList, PersonalItem,
   PersonalList,
   Trip,
   TripListItem,
@@ -57,6 +57,42 @@ export const api = {
 
   getPersonalList: (tripId: string, personalListId: number) =>
       request<PersonalList>(`${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/`),
+
+  createPersonalItem: (
+      tripId: string,
+      personalListId: number,
+      data: { name: string; quantity: string }
+  ) =>
+      request<PersonalItem>(`${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+  updatePersonalItem: (
+      tripId: string,
+      personalListId: number,
+      itemId: number,
+      data: Partial<{ name: string; quantity: string; is_packed: boolean }>
+  ) =>
+      request<PersonalItem>(
+          `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(data),
+          }
+      ),
+
+  deletePersonalItem: (
+      tripId: string,
+      personalListId: number,
+      itemId: number
+  ) =>
+      request<void>(
+          `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
+          {
+            method: "DELETE",
+          }
+      ),
 
   getNote: (tripId: string, noteId: number) =>
       request<TripNote>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`),

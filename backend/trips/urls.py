@@ -2,7 +2,8 @@
 from django.urls import path
 from .api_views import TripListView, TripDetailView, TripGroceryListDetailView, \
     TripWeatherView, LoginView, LogoutView, CurrentUserView, CsrfTokenView, TripNoteDetailView, \
-    TripPersonalListDetailView, TripGroceryItemCreateView, TripGroceryItemDetailView
+    TripPersonalListDetailView, TripGroceryItemCreateView, TripGroceryItemDetailView, TripPersonalItemCreateView, \
+    TripPersonalItemDetailView
 
 urlpatterns = [
     path("auth/csrf/", CsrfTokenView.as_view(), name="api-csrf"),
@@ -17,5 +18,7 @@ urlpatterns = [
     path("trips/<uuid:trip_id>/groceries/<int:grocery_list_id>/items/<int:item_id>/", TripGroceryItemDetailView.as_view(), name="trip-grocery-item-detail"),
     path("trips/<uuid:trip_id>/notes/<int:note_id>/", TripNoteDetailView.as_view(), name="trip-note-detail"),
     path("trips/<uuid:trip_id>/personal-lists/<int:personal_list_id>/", TripPersonalListDetailView.as_view(), name="trip-personal-list-detail"),
+    path("trips/<uuid:trip_id>/personal-lists/<int:personal_list_id>/items/", TripPersonalItemCreateView.as_view(),name="trip-personal-item-create",),
+    path("trips/<uuid:trip_id>/personal-lists/<int:personal_list_id>/items/<int:item_id>/", TripPersonalItemDetailView.as_view(), name="trip-personal-item-detail"),
     path("trips/<uuid:trip_id>/weather/", TripWeatherView.as_view(), name="trip-weather"),
 ]

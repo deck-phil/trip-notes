@@ -149,7 +149,13 @@ export default function GroceryPanel({
   return (
       <div className="grocery-panel">
         {showEditing ? (
-            <div className="grocery-add-row">
+            <form
+                className="grocery-add-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addNewItem();
+                }}
+            >
               <div className="grocery-list-item__editor">
                 <input
                     type="text"
@@ -170,15 +176,14 @@ export default function GroceryPanel({
 
               <div className="grocery-list-item__actions">
                 <button
-                    type="button"
+                    type="submit"
                     className="grocery-item-action grocery-item-action--primary"
-                    onClick={addNewItem}
                     disabled={createItemMutation.isPending}
                 >
                   Add
                 </button>
               </div>
-            </div>
+            </form>
         ) : null}
 
         {groceryList.items.length === 0 ? (
