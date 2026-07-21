@@ -44,7 +44,7 @@ export default function BoardColumn({
 
             {items.length === 0 && (
                 <div className="trip-board-empty">
-                  Drop module here
+                  Drop notes here
                 </div>
             )}
           </div>

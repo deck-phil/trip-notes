@@ -447,7 +447,7 @@ export default function TripBoardPage() {
                       }
 
                       const isEditing = isModuleEditing(module.id);
-                      const canEditModule = ['grocery', 'notes', 'personal'].includes(module.type) && (trip.is_organizer || module.created_by === currentUser?.id);
+                      const canEditModule = (trip.is_organizer || module.created_by === currentUser?.id);
 
                       return (
                           <BoardModuleCard

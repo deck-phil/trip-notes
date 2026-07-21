@@ -37,6 +37,10 @@ export default function BoardModuleCard({
     transition,
   };
 
+  const handleStyle = {
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
   return (
       <article
           ref={setNodeRef}
@@ -51,6 +55,7 @@ export default function BoardModuleCard({
         <header className="board-module-card__header">
           <div
               className="board-module-card__header-main board-module-card__header--handle"
+              style={handleStyle}
               {...attributes}
               {...listeners}
           >

@@ -98,10 +98,14 @@ export default function WeatherPanel({tripId}: Props) {
                   </p>
 
                   <div className="weather-day-extra">
-                <span>
-                  Precip: {formatNumber(day.precipitation_sum, precipitationUnit)}
-                </span>
-                    &nbsp;
+                    {Number(day.precipitation_sum) > 1 ? (
+                        <>
+                          <span>
+                            Precip: {formatNumber(day.precipitation_sum, precipitationUnit)}
+                          </span>
+                          &nbsp;
+                        </>
+                    ) : null}
                     <span>
                   Wind: {formatNumber(day.wind_speed_max, windUnit)}
                 </span>

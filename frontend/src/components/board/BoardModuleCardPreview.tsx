@@ -23,7 +23,7 @@ export default function BoardModuleCardPreview({
         </header>
 
         <div className="board-module-card__body">
-          <p className="panel-meta">Moving module…</p>
+          <p className="panel-meta">Moving note…</p>
         </div>
       </article>
   );

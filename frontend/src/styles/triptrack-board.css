@@ -121,11 +121,6 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     padding: var(--space-3);
-    cursor: grab;
-}
-
-.board-module-card:active {
-    cursor: grabbing;
 }
 
 .board-module-card--grocery {
@@ -184,9 +179,29 @@ body {
 .board-module-card__header--handle {
     cursor: grab;
 }
+.board-module-card__header--handle {
+  position: relative;
+}
 
-.board-module-card__header--handle:active {
-    cursor: grabbing;
+.board-module-card__header--handle::after {
+  content: "";
+  position: absolute;
+  top: -14px;
+  right: -12px;
+  bottom: -14px;
+  left: -14px;
+}
+
+/* Global viewport override when ANY element is dragged active */
+body:has(.board-module-card--dragging),
+body:has(.board-module-card--dragging) * {
+    cursor: grabbing !important;
+}
+
+/* Fallback override targeting the dnd-kit DragOverlay wrapper explicitly */
+[data-dnd-kit-drag-overlay],
+[data-dnd-kit-drag-overlay] * {
+    cursor: grabbing !important;
 }
 
 .board-module-card__handle-icon {
