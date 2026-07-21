@@ -312,6 +312,8 @@ export default function TripBoardPage() {
             <NotesPanel
                 tripId={requiredTripId}
                 noteId={(instance.props as { noteId: number }).noteId}
+                canEdit={canEdit}
+                isEditMode={isEditMode}
             />
         );
 

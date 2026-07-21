@@ -97,6 +97,19 @@ export const api = {
   getNote: (tripId: string, noteId: number) =>
       request<TripNote>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`),
 
+  updateNote: (
+      tripId: string,
+      noteId: number,
+      data: Partial<{ title: string; body: string }>
+  ) =>
+      request<PersonalItem>(
+          `${API_BASE}/trips/${tripId}/notes/${noteId}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(data),
+          }
+      ),
+
   getWeather: (tripId: string) =>
       request<TripWeather>(`${API_BASE}/trips/${tripId}/weather/`),
 };

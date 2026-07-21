@@ -258,7 +258,6 @@ body {
 }
 
 .panel-meta,
-.note-body,
 .weather-meta,
 .weather-day-summary,
 .weather-day-range,
@@ -268,6 +267,11 @@ body {
     color: var(--muted);
     font-size: 0.9rem;
     line-height: 1.45;
+}
+
+.note-body {
+    white-space: pre-wrap;
+    margin: 0;
 }
 
 .panel-check,
@@ -652,4 +656,14 @@ body {
     gap: var(--space-2);
     padding-bottom: var(--space-2);
     border-bottom: 1px solid rgba(17, 17, 17, 0.12);
+}
+
+.note-edit-textarea {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    resize: none;
+    overflow: hidden;
 }

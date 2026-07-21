@@ -150,7 +150,7 @@ class TripGroceryItemDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-class TripNoteDetailView(generics.RetrieveAPIView):
+class TripNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NoteSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
