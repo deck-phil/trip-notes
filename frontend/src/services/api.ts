@@ -1,7 +1,8 @@
-import {API_BASE, request} from "./http";
+import { API_BASE, request } from "./http";
 import type {
   GroceryItem,
-  GroceryList, PersonalItem,
+  GroceryList,
+  PersonalItem,
   PersonalList,
   Trip,
   TripListItem,
@@ -10,106 +11,107 @@ import type {
 } from "../types/trip";
 
 export const api = {
-  getTripList: () =>
-      request<TripListItem[]>(`${API_BASE}/trips/`),
+  getTripList: () => request<TripListItem[]>(`${API_BASE}/trips/`),
 
-  getTrip: (tripId: string) =>
-      request<Trip>(`${API_BASE}/trips/${tripId}/`),
+  getTrip: (tripId: string) => request<Trip>(`${API_BASE}/trips/${tripId}/`),
 
   getGroceryList: (tripId: string, groceryListId: number) =>
-      request<GroceryList>(`${API_BASE}/trips/${tripId}/groceries/${groceryListId}/`),
+    request<GroceryList>(
+      `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/`,
+    ),
 
   createGroceryItem: (
-      tripId: string,
-      groceryListId: number,
-      data: { name: string; quantity: string }
+    tripId: string,
+    groceryListId: number,
+    data: { name: string; quantity: string },
   ) =>
-      request<GroceryItem>(`${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/`, {
+    request<GroceryItem>(
+      `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/`,
+      {
         method: "POST",
         body: JSON.stringify(data),
-      }),
+      },
+    ),
 
   updateGroceryItem: (
-      tripId: string,
-      groceryListId: number,
-      itemId: number,
-      data: Partial<{ name: string; quantity: string; is_packed: boolean }>
+    tripId: string,
+    groceryListId: number,
+    itemId: number,
+    data: Partial<{ name: string; quantity: string; is_packed: boolean }>,
   ) =>
-      request<GroceryItem>(
-          `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/${itemId}/`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(data),
-          }
-      ),
+    request<GroceryItem>(
+      `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/${itemId}/`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+    ),
 
-  deleteGroceryItem: (
-      tripId: string,
-      groceryListId: number,
-      itemId: number
-  ) =>
-      request<void>(
-          `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/${itemId}/`,
-          {
-            method: "DELETE",
-          }
-      ),
+  deleteGroceryItem: (tripId: string, groceryListId: number, itemId: number) =>
+    request<void>(
+      `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/items/${itemId}/`,
+      {
+        method: "DELETE",
+      },
+    ),
 
   getPersonalList: (tripId: string, personalListId: number) =>
-      request<PersonalList>(`${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/`),
+    request<PersonalList>(
+      `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/`,
+    ),
 
   createPersonalItem: (
-      tripId: string,
-      personalListId: number,
-      data: { name: string; quantity: string }
+    tripId: string,
+    personalListId: number,
+    data: { name: string; quantity: string },
   ) =>
-      request<PersonalItem>(`${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/`, {
+    request<PersonalItem>(
+      `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/`,
+      {
         method: "POST",
         body: JSON.stringify(data),
-      }),
+      },
+    ),
 
   updatePersonalItem: (
-      tripId: string,
-      personalListId: number,
-      itemId: number,
-      data: Partial<{ name: string; quantity: string; is_packed: boolean }>
+    tripId: string,
+    personalListId: number,
+    itemId: number,
+    data: Partial<{ name: string; quantity: string; is_packed: boolean }>,
   ) =>
-      request<PersonalItem>(
-          `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(data),
-          }
-      ),
+    request<PersonalItem>(
+      `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+    ),
 
   deletePersonalItem: (
-      tripId: string,
-      personalListId: number,
-      itemId: number
+    tripId: string,
+    personalListId: number,
+    itemId: number,
   ) =>
-      request<void>(
-          `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
-          {
-            method: "DELETE",
-          }
-      ),
+    request<void>(
+      `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/items/${itemId}/`,
+      {
+        method: "DELETE",
+      },
+    ),
 
   getNote: (tripId: string, noteId: number) =>
-      request<TripNote>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`),
+    request<TripNote>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`),
 
   updateNote: (
-      tripId: string,
-      noteId: number,
-      data: Partial<{ title: string; body: string }>
+    tripId: string,
+    noteId: number,
+    data: Partial<{ title: string; body: string }>,
   ) =>
-      request<PersonalItem>(
-          `${API_BASE}/trips/${tripId}/notes/${noteId}/`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(data),
-          }
-      ),
+    request<PersonalItem>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 
   getWeather: (tripId: string) =>
-      request<TripWeather>(`${API_BASE}/trips/${tripId}/weather/`),
+    request<TripWeather>(`${API_BASE}/trips/${tripId}/weather/`),
 };

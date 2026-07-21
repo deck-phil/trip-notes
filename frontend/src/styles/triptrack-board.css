@@ -179,17 +179,18 @@ body {
 .board-module-card__header--handle {
     cursor: grab;
 }
+
 .board-module-card__header--handle {
-  position: relative;
+    position: relative;
 }
 
 .board-module-card__header--handle::after {
-  content: "";
-  position: absolute;
-  top: -14px;
-  right: -12px;
-  bottom: -14px;
-  left: -14px;
+    content: "";
+    position: absolute;
+    top: -14px;
+    right: -12px;
+    bottom: -14px;
+    left: -14px;
 }
 
 /* Global viewport override when ANY element is dragged active */

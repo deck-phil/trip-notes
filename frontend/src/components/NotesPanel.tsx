@@ -1,7 +1,7 @@
-import {useEffect, useRef, useState} from "react";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {api} from "../services/api";
-import type {TripNote} from "../types/trip";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../services/api";
+import type { TripNote } from "../types/trip";
 
 type Props = {
   tripId: string;
@@ -11,11 +11,11 @@ type Props = {
 };
 
 export default function NotesPanel({
-                                     tripId,
-                                     noteId,
-                                     canEdit,
-                                     isEditMode,
-                                   }: Props) {
+  tripId,
+  noteId,
+  canEdit,
+  isEditMode,
+}: Props) {
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const wasEditingRef = useRef(false);
@@ -53,8 +53,8 @@ export default function NotesPanel({
   }, [draftBody, showEditing]);
 
   const updateNoteMutation = useMutation({
-    mutationFn: ({body}: { body: string }) =>
-        api.updateNote(tripId, noteId, {body}),
+    mutationFn: ({ body }: { body: string }) =>
+      api.updateNote(tripId, noteId, { body }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["trip", tripId, "note", noteId],
@@ -67,7 +67,7 @@ export default function NotesPanel({
       const trimmedBody = draftBody.trim();
 
       if (trimmedBody !== (note.body ?? "").trim()) {
-        updateNoteMutation.mutate({body: trimmedBody});
+        updateNoteMutation.mutate({ body: trimmedBody });
       }
     }
 
@@ -84,22 +84,22 @@ export default function NotesPanel({
 
   if (showEditing) {
     return (
-        <div className="note-card">
+      <div className="note-card">
         <textarea
-            ref={textareaRef}
-            className="grocery-edit-input note-edit-textarea"
-            value={draftBody}
-            onChange={(event) => setDraftBody(event.target.value)}
-            placeholder="Note body"
-            rows={1}
+          ref={textareaRef}
+          className="grocery-edit-input note-edit-textarea"
+          value={draftBody}
+          onChange={(event) => setDraftBody(event.target.value)}
+          placeholder="Note body"
+          rows={1}
         />
-        </div>
+      </div>
     );
   }
 
   return (
-      <div className="note-card">
-        <p className="note-body">{note.body}</p>
-      </div>
+    <div className="note-card">
+      <p className="note-body">{note.body}</p>
+    </div>
   );
 }

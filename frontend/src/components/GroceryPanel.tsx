@@ -1,7 +1,7 @@
-import {useState} from "react";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {api} from "../services/api";
-import type {GroceryList} from "../types/trip";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../services/api";
+import type { GroceryList } from "../types/trip";
 
 type Props = {
   tripId: string;
@@ -11,11 +11,11 @@ type Props = {
 };
 
 export default function GroceryPanel({
-                                       tripId,
-                                       groceryListId,
-                                       canEdit,
-                                       isEditMode,
-                                     }: Props) {
+  tripId,
+  groceryListId,
+  canEdit,
+  isEditMode,
+}: Props) {
   const queryClient = useQueryClient();
 
   const {
@@ -36,18 +36,18 @@ export default function GroceryPanel({
 
   const updateItemMutation = useMutation({
     mutationFn: ({
-                   itemId,
-                   name,
-                   quantity,
-                 }: {
+      itemId,
+      name,
+      quantity,
+    }: {
       itemId: number;
       name: string;
       quantity: string;
     }) =>
-        api.updateGroceryItem(tripId, groceryListId, itemId, {
-          name,
-          quantity,
-        }),
+      api.updateGroceryItem(tripId, groceryListId, itemId, {
+        name,
+        quantity,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["trip", tripId, "grocery-list", groceryListId],
@@ -59,17 +59,11 @@ export default function GroceryPanel({
   });
 
   const createItemMutation = useMutation({
-    mutationFn: ({
-                   name,
-                   quantity,
-                 }: {
-      name: string;
-      quantity: string;
-    }) =>
-        api.createGroceryItem(tripId, groceryListId, {
-          name,
-          quantity,
-        }),
+    mutationFn: ({ name, quantity }: { name: string; quantity: string }) =>
+      api.createGroceryItem(tripId, groceryListId, {
+        name,
+        quantity,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["trip", tripId, "grocery-list", groceryListId],
@@ -81,7 +75,7 @@ export default function GroceryPanel({
 
   const deleteItemMutation = useMutation({
     mutationFn: (itemId: number) =>
-        api.deleteGroceryItem(tripId, groceryListId, itemId),
+      api.deleteGroceryItem(tripId, groceryListId, itemId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["trip", tripId, "grocery-list", groceryListId],
@@ -147,149 +141,151 @@ export default function GroceryPanel({
   }
 
   return (
-      <div className="grocery-panel">
-        {showEditing ? (
-            <form
-                className="grocery-add-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  addNewItem();
-                }}
+    <div className="grocery-panel">
+      {showEditing ? (
+        <form
+          className="grocery-add-row"
+          onSubmit={(event) => {
+            event.preventDefault();
+            addNewItem();
+          }}
+        >
+          <div className="grocery-list-item__editor">
+            <input
+              type="text"
+              className="grocery-edit-input grocery-edit-input--name"
+              value={newItemName}
+              onChange={(event) => setNewItemName(event.target.value)}
+              placeholder="Add item"
+            />
+
+            <input
+              type="text"
+              className="grocery-edit-input grocery-edit-input--quantity"
+              value={newItemQuantity}
+              onChange={(event) => setNewItemQuantity(event.target.value)}
+              placeholder="Qty"
+            />
+          </div>
+
+          <div className="grocery-list-item__actions">
+            <button
+              type="submit"
+              className="grocery-item-action grocery-item-action--primary"
+              disabled={createItemMutation.isPending}
             >
-              <div className="grocery-list-item__editor">
-                <input
-                    type="text"
-                    className="grocery-edit-input grocery-edit-input--name"
-                    value={newItemName}
-                    onChange={(event) => setNewItemName(event.target.value)}
-                    placeholder="Add item"
-                />
+              Add
+            </button>
+          </div>
+        </form>
+      ) : null}
 
-                <input
-                    type="text"
-                    className="grocery-edit-input grocery-edit-input--quantity"
-                    value={newItemQuantity}
-                    onChange={(event) => setNewItemQuantity(event.target.value)}
-                    placeholder="Qty"
-                />
-              </div>
+      {groceryList.items.length === 0 ? (
+        showEditing ? (
+          <p className="panel-meta">No items yet.</p>
+        ) : null
+      ) : (
+        <ul className="panel-list grocery-list">
+          {groceryList.items.map((item) => {
+            const isRowEditing = showEditing && editingItemId === item.id;
 
-              <div className="grocery-list-item__actions">
-                <button
-                    type="submit"
-                    className="grocery-item-action grocery-item-action--primary"
-                    disabled={createItemMutation.isPending}
-                >
-                  Add
-                </button>
-              </div>
-            </form>
-        ) : null}
+            return (
+              <li key={item.id} className="panel-list-item grocery-list-item">
+                {isRowEditing ? (
+                  <>
+                    <div className="grocery-list-item__editor">
+                      <input
+                        type="text"
+                        className="grocery-edit-input grocery-edit-input--name"
+                        value={draftName}
+                        onChange={(event) => setDraftName(event.target.value)}
+                        placeholder="Item name"
+                      />
 
-        {groceryList.items.length === 0 ? (
-            showEditing ? (
-                <p className="panel-meta">No items yet.</p>
-            ) : null
-        ) : (
-            <ul className="panel-list grocery-list">
-              {groceryList.items.map((item) => {
-                const isRowEditing = showEditing && editingItemId === item.id;
+                      <input
+                        type="text"
+                        className="grocery-edit-input grocery-edit-input--quantity"
+                        value={draftQuantity}
+                        onChange={(event) =>
+                          setDraftQuantity(event.target.value)
+                        }
+                        placeholder="Qty"
+                      />
+                    </div>
 
-                return (
-                    <li key={item.id} className="panel-list-item grocery-list-item">
-                      {isRowEditing ? (
-                          <>
-                            <div className="grocery-list-item__editor">
-                              <input
-                                  type="text"
-                                  className="grocery-edit-input grocery-edit-input--name"
-                                  value={draftName}
-                                  onChange={(event) => setDraftName(event.target.value)}
-                                  placeholder="Item name"
-                              />
+                    <div className="grocery-list-item__actions">
+                      <button
+                        type="button"
+                        className="grocery-item-action grocery-item-action--primary"
+                        onClick={() => saveEditing(item.id)}
+                        disabled={updateItemMutation.isPending}
+                      >
+                        Save
+                      </button>
 
-                              <input
-                                  type="text"
-                                  className="grocery-edit-input grocery-edit-input--quantity"
-                                  value={draftQuantity}
-                                  onChange={(event) => setDraftQuantity(event.target.value)}
-                                  placeholder="Qty"
-                              />
-                            </div>
-
-                            <div className="grocery-list-item__actions">
-                              <button
-                                  type="button"
-                                  className="grocery-item-action grocery-item-action--primary"
-                                  onClick={() => saveEditing(item.id)}
-                                  disabled={updateItemMutation.isPending}
-                              >
-                                Save
-                              </button>
-
-                              <button
-                                  type="button"
-                                  className="grocery-item-action grocery-item-action--secondary"
-                                  onClick={cancelEditing}
-                                  disabled={updateItemMutation.isPending}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </>
-                      ) : (
-                          <>
-                            <div className="grocery-list-item__content">
+                      <button
+                        type="button"
+                        className="grocery-item-action grocery-item-action--secondary"
+                        onClick={cancelEditing}
+                        disabled={updateItemMutation.isPending}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grocery-list-item__content">
                       <span className="panel-item-name grocery-list-item__name">
                         {item.name}
                       </span>
 
-                              {item.quantity && (
-                                  <span className="panel-meta grocery-list-item__quantity">
+                      {item.quantity && (
+                        <span className="panel-meta grocery-list-item__quantity">
                           {item.quantity}
                         </span>
-                              )}
-                            </div>
+                      )}
+                    </div>
 
-                            <div className="grocery-list-item__actions">
-                              {item.is_packed && !showEditing ? (
-                                  <span
-                                      className="panel-check grocery-list-item__check"
-                                      aria-label="Packed"
-                                      title="Packed"
-                                  >
+                    <div className="grocery-list-item__actions">
+                      {item.is_packed && !showEditing ? (
+                        <span
+                          className="panel-check grocery-list-item__check"
+                          aria-label="Packed"
+                          title="Packed"
+                        >
                           ✓
                         </span>
-                              ) : null}
+                      ) : null}
 
-                              {showEditing ? (
-                                  <>
-                                    <button
-                                        type="button"
-                                        className="grocery-item-action grocery-item-action--secondary"
-                                        onClick={() => startEditing(item)}
-                                    >
-                                      Edit
-                                    </button>
+                      {showEditing ? (
+                        <>
+                          <button
+                            type="button"
+                            className="grocery-item-action grocery-item-action--secondary"
+                            onClick={() => startEditing(item)}
+                          >
+                            Edit
+                          </button>
 
-                                    <button
-                                        type="button"
-                                        className="grocery-item-action grocery-item-action--danger"
-                                        onClick={() => deleteItemMutation.mutate(item.id)}
-                                        disabled={deleteItemMutation.isPending}
-                                    >
-                                      Delete
-                                    </button>
-                                  </>
-                              ) : null}
-                            </div>
-                          </>
-                      )}
-                    </li>
-                );
-              })}
-            </ul>
-        )}
-      </div>
+                          <button
+                            type="button"
+                            className="grocery-item-action grocery-item-action--danger"
+                            onClick={() => deleteItemMutation.mutate(item.id)}
+                            disabled={deleteItemMutation.isPending}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import type {ApiErrorShape} from "../types/auth";
+import type { ApiErrorShape } from "../types/auth";
 
 export const API_BASE = "http://localhost:8000/api";
 
@@ -42,7 +42,10 @@ export async function getCsrfToken(): Promise<void> {
   });
 }
 
-export async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(
+  url: string,
+  init: RequestInit = {},
+): Promise<T> {
   const method = init.method ?? "GET";
   const headers = new Headers(init.headers ?? {});
 

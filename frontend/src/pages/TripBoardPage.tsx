@@ -1,7 +1,7 @@
-import {useEffect, useMemo, useRef, useState} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import throttle from "lodash/throttle";
-import {useQuery} from "@tanstack/react-query";
-import {Navigate, useParams} from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Navigate, useParams } from "react-router-dom";
 import {
   closestCenter,
   DndContext,
@@ -14,9 +14,9 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {arrayMove, sortableKeyboardCoordinates} from "@dnd-kit/sortable";
-import {api} from "../services/api";
-import type {Trip} from "../types/trip";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { api } from "../services/api";
+import type { Trip } from "../types/trip";
 import TripHeaderPanel from "../components/TripHeaderPanel";
 import GroceryPanel from "../components/GroceryPanel";
 import PersonalListPanel from "../components/PersonalListPanel";
@@ -27,16 +27,16 @@ import BoardColumn from "../components/board/BoardColumn";
 import BoardModuleCard from "../components/board/BoardModuleCard";
 import "../styles/triptrack-board.css";
 import BoardModuleCardPreview from "../components/board/BoardModuleCardPreview.tsx";
-import {ApiError} from "../services/http.ts";
-import {useAuth} from "../auth/AuthContext.tsx";
+import { ApiError } from "../services/http.ts";
+import { useAuth } from "../auth/AuthContext.tsx";
 
 type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
 
 type ModuleProps =
-    | { groceryListId: number }
-    | { personalListId: number }
-    | { noteId: number }
-    | undefined;
+  | { groceryListId: number }
+  | { personalListId: number }
+  | { noteId: number }
+  | undefined;
 
 interface ModuleInstance {
   id: string;
@@ -87,14 +87,14 @@ function findContainer(layout: BoardLayout, id: string): ColumnId | null {
 }
 
 export default function TripBoardPage() {
-  const {tripId} = useParams<{ tripId: string }>();
+  const { tripId } = useParams<{ tripId: string }>();
 
   if (!tripId) {
-    return <Navigate to="/trips" replace/>;
+    return <Navigate to="/trips" replace />;
   }
 
   const requiredTripId = tripId;
-  const {user: currentUser} = useAuth();
+  const { user: currentUser } = useAuth();
   const {
     data: trip,
     isPending,
@@ -104,8 +104,8 @@ export default function TripBoardPage() {
     queryFn: () => api.getTrip(requiredTripId),
     retry: (failureCount, error) => {
       if (
-          error instanceof ApiError &&
-          [400, 401, 403, 404].includes(error.status)
+        error instanceof ApiError &&
+        [400, 401, 403, 404].includes(error.status)
       ) {
         return false;
       }
@@ -114,11 +114,11 @@ export default function TripBoardPage() {
   });
 
   const hasMap =
-      !!trip &&
-      trip.latitude !== null &&
-      trip.longitude !== null &&
-      !Number.isNaN(Number(trip.latitude)) &&
-      !Number.isNaN(Number(trip.longitude));
+    !!trip &&
+    trip.latitude !== null &&
+    trip.longitude !== null &&
+    !Number.isNaN(Number(trip.latitude)) &&
+    !Number.isNaN(Number(trip.longitude));
 
   const moduleInstances = useMemo<ModuleInstance[]>(() => {
     if (!trip) {
@@ -129,32 +129,34 @@ export default function TripBoardPage() {
       id: `grocery-${list.id}`,
       type: "grocery",
       title: list.name,
-      props: {groceryListId: list.id},
+      props: { groceryListId: list.id },
       created_by: list.created_by,
     }));
 
-    const personalModules: ModuleInstance[] = trip.personal_lists.map((list) => ({
-      id: `personal-${list.id}`,
-      type: "personal",
-      title: `${list.name}`,
-      props: {personalListId: list.id},
-      created_by: list.created_by,
-    }));
+    const personalModules: ModuleInstance[] = trip.personal_lists.map(
+      (list) => ({
+        id: `personal-${list.id}`,
+        type: "personal",
+        title: `${list.name}`,
+        props: { personalListId: list.id },
+        created_by: list.created_by,
+      }),
+    );
 
     const noteModules: ModuleInstance[] = trip.notes.map((note) => ({
       id: `note-${note.id}`,
       type: "notes",
       title: note.title,
-      props: {noteId: note.id},
+      props: { noteId: note.id },
       created_by: note.created_by,
     }));
 
     const sharedModules: ModuleInstance[] = [
-      {id: "weather-primary", type: "weather", title: "Weather"},
+      { id: "weather-primary", type: "weather", title: "Weather" },
     ];
 
     if (hasMap) {
-      sharedModules.push({id: "map-primary", type: "map", title: "Map"});
+      sharedModules.push({ id: "map-primary", type: "map", title: "Map" });
     }
 
     return [
@@ -167,74 +169,76 @@ export default function TripBoardPage() {
 
   const moduleLookup = useMemo(() => {
     return Object.fromEntries(
-        moduleInstances.map((module) => [module.id, module])
+      moduleInstances.map((module) => [module.id, module]),
     ) as Record<string, ModuleInstance>;
   }, [moduleInstances]);
 
   const [layout, setLayout] = useState<BoardLayout>(() =>
-      buildInitialLayout(moduleInstances)
+    buildInitialLayout(moduleInstances),
   );
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [editingModules, setEditingModules] = useState<Record<string, boolean>>({});
+  const [editingModules, setEditingModules] = useState<Record<string, boolean>>(
+    {},
+  );
   const throttledCrossColumnMove = useRef(
-      throttle(
-          (
-              activeId: string,
-              overId: string,
-              _getLayout: () => BoardLayout,
-              setLayout: React.Dispatch<React.SetStateAction<BoardLayout>>
-          ) => {
-            setLayout((current) => {
-              const sourceColumn = findContainer(current, activeId);
-              const targetColumn = findContainer(current, overId);
+    throttle(
+      (
+        activeId: string,
+        overId: string,
+        _getLayout: () => BoardLayout,
+        setLayout: React.Dispatch<React.SetStateAction<BoardLayout>>,
+      ) => {
+        setLayout((current) => {
+          const sourceColumn = findContainer(current, activeId);
+          const targetColumn = findContainer(current, overId);
 
-              if (!sourceColumn || !targetColumn) {
-                return current;
-              }
+          if (!sourceColumn || !targetColumn) {
+            return current;
+          }
 
-              if (sourceColumn === targetColumn) {
-                return current;
-              }
+          if (sourceColumn === targetColumn) {
+            return current;
+          }
 
-              const sourceItems = current[sourceColumn];
-              const targetItems = current[targetColumn];
+          const sourceItems = current[sourceColumn];
+          const targetItems = current[targetColumn];
 
-              const sourceIndex = sourceItems.indexOf(activeId);
-              if (sourceIndex === -1) {
-                return current;
-              }
+          const sourceIndex = sourceItems.indexOf(activeId);
+          if (sourceIndex === -1) {
+            return current;
+          }
 
-              const alreadyInTarget = targetItems.includes(activeId);
-              if (alreadyInTarget) {
-                return current;
-              }
+          const alreadyInTarget = targetItems.includes(activeId);
+          if (alreadyInTarget) {
+            return current;
+          }
 
-              const nextSourceItems = [...sourceItems];
-              const nextTargetItems = [...targetItems];
+          const nextSourceItems = [...sourceItems];
+          const nextTargetItems = [...targetItems];
 
-              nextSourceItems.splice(sourceIndex, 1);
+          nextSourceItems.splice(sourceIndex, 1);
 
-              if (isColumnId(overId)) {
-                nextTargetItems.push(activeId);
-              } else {
-                const targetIndex = nextTargetItems.indexOf(overId);
-                if (targetIndex === -1) {
-                  return current;
-                }
-                nextTargetItems.splice(targetIndex, 0, activeId);
-              }
+          if (isColumnId(overId)) {
+            nextTargetItems.push(activeId);
+          } else {
+            const targetIndex = nextTargetItems.indexOf(overId);
+            if (targetIndex === -1) {
+              return current;
+            }
+            nextTargetItems.splice(targetIndex, 0, activeId);
+          }
 
-              return {
-                ...current,
-                [sourceColumn]: nextSourceItems,
-                [targetColumn]: nextTargetItems,
-              };
-            });
-          },
-          80,
-          {leading: true, trailing: true}
-      )
+          return {
+            ...current,
+            [sourceColumn]: nextSourceItems,
+            [targetColumn]: nextTargetItems,
+          };
+        });
+      },
+      80,
+      { leading: true, trailing: true },
+    ),
   );
 
   useEffect(() => {
@@ -254,7 +258,9 @@ export default function TripBoardPage() {
       };
 
       const placedIds = new Set(Object.values(filteredCurrent).flat());
-      const missingModules = moduleInstances.filter((module) => !placedIds.has(module.id));
+      const missingModules = moduleInstances.filter(
+        (module) => !placedIds.has(module.id),
+      );
 
       if (missingModules.length === 0) {
         return filteredCurrent;
@@ -271,17 +277,21 @@ export default function TripBoardPage() {
   }, [moduleInstances]);
 
   const sensors = useSensors(
-      useSensor(PointerSensor, {
-        activationConstraint: {
-          distance: 6,
-        },
-      }),
-      useSensor(KeyboardSensor, {
-        coordinateGetter: sortableKeyboardCoordinates,
-      })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
-  function renderModule(instance: ModuleInstance, isEditMode = false, canEdit = false) {
+  function renderModule(
+    instance: ModuleInstance,
+    isEditMode = false,
+    canEdit = false,
+  ) {
     if (!trip) {
       return null;
     }
@@ -289,39 +299,43 @@ export default function TripBoardPage() {
     switch (instance.type) {
       case "grocery":
         return (
-            <GroceryPanel
-                tripId={requiredTripId}
-                groceryListId={(instance.props as { groceryListId: number }).groceryListId}
-                canEdit={canEdit}
-                isEditMode={isEditMode}
-            />
+          <GroceryPanel
+            tripId={requiredTripId}
+            groceryListId={
+              (instance.props as { groceryListId: number }).groceryListId
+            }
+            canEdit={canEdit}
+            isEditMode={isEditMode}
+          />
         );
 
       case "personal":
         return (
-            <PersonalListPanel
-                tripId={requiredTripId}
-                personalListId={(instance.props as { personalListId: number }).personalListId}
-                canEdit={canEdit}
-                isEditMode={isEditMode}
-            />
+          <PersonalListPanel
+            tripId={requiredTripId}
+            personalListId={
+              (instance.props as { personalListId: number }).personalListId
+            }
+            canEdit={canEdit}
+            isEditMode={isEditMode}
+          />
         );
 
       case "notes":
         return (
-            <NotesPanel
-                tripId={requiredTripId}
-                noteId={(instance.props as { noteId: number }).noteId}
-                canEdit={canEdit}
-                isEditMode={isEditMode}
-            />
+          <NotesPanel
+            tripId={requiredTripId}
+            noteId={(instance.props as { noteId: number }).noteId}
+            canEdit={canEdit}
+            isEditMode={isEditMode}
+          />
         );
 
       case "weather":
-        return <WeatherPanel tripId={requiredTripId}/>;
+        return <WeatherPanel tripId={requiredTripId} />;
 
       case "map":
-        return <TripMapPanel trip={trip}/>;
+        return <TripMapPanel trip={trip} />;
 
       default:
         return null;
@@ -333,7 +347,7 @@ export default function TripBoardPage() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const {active, over} = event;
+    const { active, over } = event;
 
     setActiveId(null);
 
@@ -379,7 +393,7 @@ export default function TripBoardPage() {
   }
 
   function handleDragOver(event: DragOverEvent) {
-    const {active, over} = event;
+    const { active, over } = event;
 
     if (!over) {
       return;
@@ -415,76 +429,79 @@ export default function TripBoardPage() {
   }
 
   if (isError || !trip) {
-    return <p className="board-message error">Could not load trip dashboard.</p>;
+    return (
+      <p className="board-message error">Could not load trip dashboard.</p>
+    );
   }
 
   return (
-      <main className="board-page">
-        <div className="board-surface">
-          <TripHeaderPanel trip={trip}/>
+    <main className="board-page">
+      <div className="board-surface">
+        <TripHeaderPanel trip={trip} />
 
-          <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-              onDragCancel={handleDragCancel}
-          >
-            <section className="trip-board" aria-label="Trip dashboard modules">
-              {(Object.keys(layout) as ColumnId[]).map((columnId) => (
-                  <BoardColumn
-                      key={columnId}
-                      title={columnId}
-                      columnKey={columnId}
-                      items={layout[columnId]}
-                  >
-                    {layout[columnId].map((moduleId) => {
-                      const module = moduleLookup[moduleId];
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <section className="trip-board" aria-label="Trip dashboard modules">
+            {(Object.keys(layout) as ColumnId[]).map((columnId) => (
+              <BoardColumn
+                key={columnId}
+                title={columnId}
+                columnKey={columnId}
+                items={layout[columnId]}
+              >
+                {layout[columnId].map((moduleId) => {
+                  const module = moduleLookup[moduleId];
 
-                      if (!module) {
-                        return null;
-                      }
+                  if (!module) {
+                    return null;
+                  }
 
-                      const isEditing = isModuleEditing(module.id);
-                      const canEditModule = (trip.is_organizer || module.created_by === currentUser?.id);
+                  const isEditing = isModuleEditing(module.id);
+                  const canEditModule =
+                    trip.is_organizer || module.created_by === currentUser?.id;
 
-                      return (
-                          <BoardModuleCard
-                              key={module.id}
-                              moduleId={module.id}
-                              moduleType={module.type}
-                              title={module.title}
-                              actions={
-                                canEditModule ? (
-                                    <button
-                                        type="button"
-                                        className="panel-mode-toggle"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          toggleModuleEditing(module.id);
-                                        }}
-                                    >
-                                      {isEditing ? "Done editing" : "Edit"}
-                                    </button>
-                                ) : null
-                              }
+                  return (
+                    <BoardModuleCard
+                      key={module.id}
+                      moduleId={module.id}
+                      moduleType={module.type}
+                      title={module.title}
+                      actions={
+                        canEditModule ? (
+                          <button
+                            type="button"
+                            className="panel-mode-toggle"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleModuleEditing(module.id);
+                            }}
                           >
-                            {renderModule(module, isEditing, canEditModule)}
-                          </BoardModuleCard>
-                      );
-                    })}
-                  </BoardColumn>
-              ))}
-            </section>
+                            {isEditing ? "Done editing" : "Edit"}
+                          </button>
+                        ) : null
+                      }
+                    >
+                      {renderModule(module, isEditing, canEditModule)}
+                    </BoardModuleCard>
+                  );
+                })}
+              </BoardColumn>
+            ))}
+          </section>
 
-            <DragOverlay dropAnimation={{duration: 180, easing: "ease-out"}}>
-              {activeId ? (
-                  <BoardModuleCardPreview module={moduleLookup[activeId]}/>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </div>
-      </main>
+          <DragOverlay dropAnimation={{ duration: 180, easing: "ease-out" }}>
+            {activeId ? (
+              <BoardModuleCardPreview module={moduleLookup[activeId]} />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+    </main>
   );
 }
