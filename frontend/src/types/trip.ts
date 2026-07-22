@@ -1,6 +1,6 @@
 export interface TripListItem {
   id: number;
-  name: string;
+  title: string;
   location: string;
   start_date: string;
   end_date: string;
@@ -10,14 +10,16 @@ export interface TripListItem {
 
 export type TripGroceryListSummary = {
   id: number;
-  name: string;
+  title: string;
+  panel_color: string;
   created_by: number;
   created_at: string;
 };
 
 export type TripPersonalListSummary = {
   id: number;
-  name: string;
+  title: string;
+  panel_color: string;
   created_by: number;
   created_at: string;
 };
@@ -25,13 +27,14 @@ export type TripPersonalListSummary = {
 export type TripNoteSummary = {
   id: number;
   title: string;
+  panel_color: string;
   created_by: number;
   created_at: string;
 };
 
 export type Trip = {
   id: string;
-  name: string;
+  title: string;
   location: string;
   description: string;
   start_date: string;
@@ -55,7 +58,8 @@ export type GroceryItem = {
 
 export type GroceryList = {
   id: string;
-  name: string;
+  title: string;
+  panel_color: string;
   trip: string;
   created_by: string | null;
   created_at: string;
@@ -72,7 +76,8 @@ export type PersonalItem = {
 
 export type PersonalList = {
   id: number;
-  name: string;
+  title: string;
+  panel_color: string;
   trip: string;
   created_by: number;
   created_at: string;
@@ -82,6 +87,7 @@ export type PersonalList = {
 export type TripNote = {
   id: string;
   title: string;
+  panel_color: string;
   body: string;
   created_at: string;
   updated_at: string;

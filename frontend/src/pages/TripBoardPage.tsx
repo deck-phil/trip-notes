@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import throttle from "lodash/throttle";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useParams } from "react-router-dom";
 import {
   closestCenter,
@@ -29,6 +29,12 @@ import "../styles/triptrack-board.css";
 import BoardModuleCardPreview from "../components/board/BoardModuleCardPreview.tsx";
 import { ApiError } from "../services/http.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
+import InspectorPanel from "../components/board/InspectorPanel.tsx";
+import {
+  savePanelSettings,
+  type SharedSettings,
+} from "../services/savePanelSettings.ts";
+import type {ModuleSettings} from "../types/inspectorTypes.ts";
 
 type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
 
@@ -42,6 +48,7 @@ interface ModuleInstance {
   id: string;
   type: ModuleType;
   title: string;
+  panel_color: string;
   props?: ModuleProps;
   created_by?: number | null;
 }
@@ -119,7 +126,7 @@ export default function TripBoardPage() {
     trip.longitude !== null &&
     !Number.isNaN(Number(trip.latitude)) &&
     !Number.isNaN(Number(trip.longitude));
-
+  const queryClient = useQueryClient();
   const moduleInstances = useMemo<ModuleInstance[]>(() => {
     if (!trip) {
       return [];
@@ -128,7 +135,8 @@ export default function TripBoardPage() {
     const groceryModules: ModuleInstance[] = trip.grocery_lists.map((list) => ({
       id: `grocery-${list.id}`,
       type: "grocery",
-      title: list.name,
+      title: list.title,
+      panel_color: list.panel_color,
       props: { groceryListId: list.id },
       created_by: list.created_by,
     }));
@@ -137,7 +145,8 @@ export default function TripBoardPage() {
       (list) => ({
         id: `personal-${list.id}`,
         type: "personal",
-        title: `${list.name}`,
+        title: `${list.title}`,
+        panel_color: `${list.panel_color}`,
         props: { personalListId: list.id },
         created_by: list.created_by,
       }),
@@ -147,16 +156,17 @@ export default function TripBoardPage() {
       id: `note-${note.id}`,
       type: "notes",
       title: note.title,
+      panel_color: note.panel_color,
       props: { noteId: note.id },
       created_by: note.created_by,
     }));
 
     const sharedModules: ModuleInstance[] = [
-      { id: "weather-primary", type: "weather", title: "Weather" },
+      { id: "weather-primary", type: "weather", title: "Weather", panel_color: "blue" },
     ];
 
     if (hasMap) {
-      sharedModules.push({ id: "map-primary", type: "map", title: "Map" });
+      sharedModules.push({ id: "map-primary", type: "map", title: "Map", panel_color: "green" });
     }
 
     return [
@@ -177,10 +187,21 @@ export default function TripBoardPage() {
     buildInitialLayout(moduleInstances),
   );
 
+  const INSPECTOR_EXIT_MS = 220;
+
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [editingModules, setEditingModules] = useState<Record<string, boolean>>(
-    {},
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [inspectorModuleId, setInspectorModuleId] = useState<string | null>(
+    null,
   );
+  const [isInspectorVisible, setIsInspectorVisible] = useState(false);
+
+  const closeTimerRef = useRef<number | null>(null);
+  const openFrameRef = useRef<number | null>(null);
+  const inspectorModule = inspectorModuleId
+    ? moduleLookup[inspectorModuleId]
+    : null;
+
   const throttledCrossColumnMove = useRef(
     throttle(
       (
@@ -413,17 +434,176 @@ export default function TripBoardPage() {
     setActiveId(null);
   }
 
-  function isModuleEditing(moduleId: string) {
-    return !!editingModules[moduleId];
+  function clearInspectorCloseTimer() {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
   }
 
+  function openModuleInspector(moduleId: string) {
+    clearInspectorCloseTimer();
+    clearInspectorOpenFrame();
+
+    setInspectorModuleId(moduleId);
+    setSelectedModuleId(moduleId);
+    setIsInspectorVisible(false);
+
+    openFrameRef.current = window.requestAnimationFrame(() => {
+      openFrameRef.current = window.requestAnimationFrame(() => {
+        setIsInspectorVisible(true);
+        openFrameRef.current = null;
+      });
+    });
+  }
+
+  function closeModuleInspector() {
+    const closingId = selectedModuleId;
+
+    clearInspectorCloseTimer();
+    clearInspectorOpenFrame();
+
+    setSelectedModuleId(null);
+    setIsInspectorVisible(false);
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setInspectorModuleId((current) =>
+        current === closingId ? null : current,
+      );
+      closeTimerRef.current = null;
+    }, INSPECTOR_EXIT_MS);
+  }
   function toggleModuleEditing(moduleId: string) {
-    setEditingModules((current) => ({
+    if (selectedModuleId === moduleId) {
+      closeModuleInspector();
+      return;
+    }
+
+    openModuleInspector(moduleId);
+  }
+
+  function isModuleEditing(moduleId: string) {
+    return selectedModuleId === moduleId;
+  }
+
+  function clearInspectorOpenFrame() {
+    if (openFrameRef.current !== null) {
+      window.cancelAnimationFrame(openFrameRef.current);
+      openFrameRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      clearInspectorCloseTimer();
+      clearInspectorOpenFrame();
+    };
+  }, []);
+  const shouldRenderInspector = !!inspectorModule;
+  const [inspectorJiggleY, setInspectorJiggleY] = useState(0);
+
+  useEffect(() => {
+    if (!isInspectorVisible) {
+      setInspectorJiggleY(0);
+      return;
+    }
+
+    let frameId = 0;
+    let target = 0;
+    let current = 0;
+    let ticking = false;
+
+    const updateTarget = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      target = Math.max(-6, Math.min(6, (scrollY % 40) * 0.3 - 6));
+
+      if (!ticking) {
+        ticking = true;
+        frameId = window.requestAnimationFrame(animate);
+      }
+    };
+
+    const animate = () => {
+      current += (target - current) * 0.18;
+
+      if (Math.abs(target - current) < 0.1) {
+        current = target;
+        ticking = false;
+      } else {
+        frameId = window.requestAnimationFrame(animate);
+      }
+
+      setInspectorJiggleY(current);
+    };
+
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    updateTarget();
+
+    return () => {
+      window.removeEventListener("scroll", updateTarget);
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isInspectorVisible]);
+
+  const [moduleSettingsById, setModuleSettingsById] = useState<
+    Record<string, ModuleSettings>
+  >({});
+
+  function getModuleSettings(moduleId: string): ModuleSettings {
+    return moduleSettingsById[moduleId] ?? {};
+  }
+
+  function updateModuleSettings(
+    moduleId: string,
+    patch: Partial<ModuleSettings>,
+  ) {
+    setModuleSettingsById((current) => ({
       ...current,
-      [moduleId]: !current[moduleId],
+      [moduleId]: {
+        ...current[moduleId],
+        ...patch,
+      },
     }));
   }
 
+  const savePanelSettingsMutation = useMutation({
+    mutationFn: ({
+      module,
+      settings,
+    }: {
+      module: ModuleInstance;
+      settings: SharedSettings;
+    }) =>
+      savePanelSettings({
+        tripId: requiredTripId,
+        module,
+        settings,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["trip", requiredTripId],
+      });
+    },
+  });
+
+  function handleInspectorSaveAndClose() {
+    if (!inspectorModule) {
+      closeModuleInspector();
+      return;
+    }
+
+    savePanelSettingsMutation.mutate(
+      {
+        module: inspectorModule,
+        settings: getModuleSettings(inspectorModule.id),
+      },
+      {
+        onSettled: () => {
+          closeModuleInspector();
+        },
+      },
+    );
+  }
   if (isPending) {
     return <p className="board-message">Loading dashboard...</p>;
   }
@@ -461,6 +641,9 @@ export default function TripBoardPage() {
                   if (!module) {
                     return null;
                   }
+                  const liveSettings = getModuleSettings(module.id);
+                  const liveTitle = liveSettings.title ?? module.title;
+                  const livePanelColor = liveSettings.panel_color ?? module.panel_color;
 
                   const isEditing = isModuleEditing(module.id);
                   const canEditModule =
@@ -470,19 +653,22 @@ export default function TripBoardPage() {
                     <BoardModuleCard
                       key={module.id}
                       moduleId={module.id}
+                      panelColor={livePanelColor}
                       moduleType={module.type}
-                      title={module.title}
+                      title={liveTitle}
+                      isSelected={selectedModuleId === module.id}
                       actions={
                         canEditModule ? (
                           <button
                             type="button"
                             className="panel-mode-toggle"
+                            onPointerDown={(event) => event.stopPropagation()}
                             onClick={(event) => {
                               event.stopPropagation();
                               toggleModuleEditing(module.id);
                             }}
                           >
-                            {isEditing ? "Done editing" : "Edit"}
+                            {isEditing ? "Done" : "Edit"}
                           </button>
                         ) : null
                       }
@@ -502,6 +688,17 @@ export default function TripBoardPage() {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {shouldRenderInspector && inspectorModule ? (
+        <InspectorPanel
+          module={inspectorModule}
+          isVisible={isInspectorVisible}
+          jiggleY={inspectorJiggleY}
+          settings={getModuleSettings(inspectorModule.id)}
+          onChange={(patch) => updateModuleSettings(inspectorModule.id, patch)}
+          onClose={handleInspectorSaveAndClose}
+        />
+      ) : null}
     </main>
   );
 }

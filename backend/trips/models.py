@@ -5,10 +5,21 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+class PanelColor(models.TextChoices):
+    YELLOW = "yellow", "Yellow"
+    GREEN = "green", "Green"
+    RED = "red", "Red"
+    BLUE = "blue", "Blue"
+    ORANGE = "orange", "Orange"
+    LAVENDER = "lavender", "Lavender"
+    MINT = "mint", "Mint"
+    PEACH = "peach", "Peach"
+    SKY = "sky", "Sky"
+
 class Trip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=200)
     location = models.CharField(
         max_length=200,
         blank=True,
@@ -46,12 +57,12 @@ class Trip(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["start_date", "name"]
+        ordering = ["start_date", "title"]
 
     def __str__(self):
         if self.location:
-            return f"{self.name} ({self.location})"
-        return self.name
+            return f"{self.title} ({self.location})"
+        return self.title
 
     @property
     def has_coordinates(self):
@@ -94,7 +105,12 @@ class GroceryList(models.Model):
         on_delete=models.CASCADE,
         related_name="grocery_lists",
     )
-    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=200)
+    panel_color = models.CharField(
+        max_length=20,
+        choices=PanelColor,
+        default=PanelColor.YELLOW,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -105,10 +121,10 @@ class GroceryList(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["created_at", "name"]
+        ordering = ["created_at", "title"]
 
     def __str__(self):
-        return self.name
+        return self.title
 
 
 class GroceryItem(models.Model):
@@ -142,7 +158,12 @@ class PersonalList(models.Model):
         on_delete=models.CASCADE,
         related_name="personal_lists",
     )
-    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=200)
+    panel_color = models.CharField(
+        max_length=20,
+        choices=PanelColor,
+        default=PanelColor.YELLOW,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -156,7 +177,7 @@ class PersonalList(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.created_by} - {self.name}"
+        return f"{self.created_by} - {self.title}"
 
 
 class PersonalItem(models.Model):
@@ -186,6 +207,11 @@ class TripNote(models.Model):
     )
     title = models.CharField(max_length=200)
     body = models.TextField()
+    panel_color = models.CharField(
+        max_length=20,
+        choices=PanelColor,
+        default=PanelColor.YELLOW,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

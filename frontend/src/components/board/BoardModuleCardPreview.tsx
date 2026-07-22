@@ -3,6 +3,7 @@ type BoardModuleCardPreviewProps = {
     id: string;
     type: string;
     title: string;
+    panel_color: string;
   };
 };
 
@@ -15,7 +16,7 @@ export default function BoardModuleCardPreview({
 
   return (
     <article
-      className={`board-module-card board-module-card--${module.type} board-module-card--overlay`}
+      className={`board-module-card board-module-card--${module.panel_color} board-module-card--overlay`}
       aria-hidden="true"
     >
       <header className="board-module-card__header">

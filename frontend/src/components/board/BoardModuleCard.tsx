@@ -5,17 +5,21 @@ import { CSS } from "@dnd-kit/utilities";
 type Props = {
   moduleId: string;
   moduleType: string;
+  panelColor: string;
   title: string;
   children: ReactNode;
   actions?: ReactNode;
+  isSelected?: boolean;
 };
 
 export default function BoardModuleCard({
   moduleId,
   moduleType,
+  panelColor,
   title,
   children,
   actions,
+  isSelected,
 }: Props) {
   const {
     attributes,
@@ -29,6 +33,7 @@ export default function BoardModuleCard({
     data: {
       type: "module",
       moduleType,
+      panelColor,
     },
   });
 
@@ -45,9 +50,9 @@ export default function BoardModuleCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`board-module-card board-module-card--${moduleType} ${
+      className={`board-module-card board-module-card--${panelColor} ${
         isDragging ? "board-module-card--dragging" : ""
-      }`}
+      } ${isSelected ? "board-module-card--selected" : ""}`}
       data-module-id={moduleId}
       data-module-type={moduleType}
       aria-label={title}

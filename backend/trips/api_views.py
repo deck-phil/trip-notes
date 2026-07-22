@@ -82,7 +82,7 @@ class TripListView(generics.ListAPIView):
             Trip.objects
             .filter(memberships__user=self.request.user)
             .distinct()
-            .order_by("start_date", "name")
+            .order_by("start_date", "title")
         )
 
 
@@ -98,7 +98,7 @@ class TripDetailView(generics.RetrieveAPIView):
         )
 
 
-class TripGroceryListDetailView(generics.RetrieveAPIView):
+class TripGroceryListDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GroceryListSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
@@ -111,7 +111,7 @@ class TripGroceryListDetailView(generics.RetrieveAPIView):
             .filter(trip_id=trip_id)
             .select_related("created_by")
             .prefetch_related("items", "items__added_by")
-            .order_by("created_at", "name")
+            .order_by("created_at", "title")
         )
 
 
@@ -166,7 +166,7 @@ class TripNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-class TripPersonalListDetailView(generics.RetrieveAPIView):
+class TripPersonalListDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PersonalListSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
@@ -179,7 +179,7 @@ class TripPersonalListDetailView(generics.RetrieveAPIView):
             .filter(trip_id=trip_id)
             .select_related("created_by")
             .prefetch_related("items")
-            .order_by("-created_at", "name")
+            .order_by("-created_at", "title")
         )
 
 

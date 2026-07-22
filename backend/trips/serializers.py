@@ -17,7 +17,7 @@ class TripListSerializer(serializers.ModelSerializer):
         model = Trip
         fields = [
             "id",
-            "name",
+            "title",
             "location",
             "start_date",
             "end_date",
@@ -43,7 +43,8 @@ class TripGroceryListSummarySerializer(serializers.ModelSerializer):
         model = GroceryList
         fields = [
             "id",
-            "name",
+            "title",
+            "panel_color",
             "created_by",
             "created_at",
         ]
@@ -55,7 +56,8 @@ class TripPersonalListSummarySerializer(serializers.ModelSerializer):
         model = PersonalList
         fields = [
             "id",
-            "name",
+            "title",
+            "panel_color",
             "created_by",
             "created_at",
         ]
@@ -65,7 +67,7 @@ class TripPersonalListSummarySerializer(serializers.ModelSerializer):
 class TripNoteRefSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripNote
-        fields = ["id", "title", "created_by", "created_at"]
+        fields = ["id", "title", "panel_color", "created_by", "created_at"]
         read_only_fields = fields
 
 
@@ -82,7 +84,7 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = [
             "id",
-            "name",
+            "title",
             "location",
             "description",
             "start_date",
@@ -131,7 +133,8 @@ class GroceryListSerializer(serializers.ModelSerializer):
         model = GroceryList
         fields = [
             "id",
-            "name",
+            "title",
+            "panel_color",
             "trip",
             "created_by",
             "created_at",
@@ -146,6 +149,7 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "panel_color",
             "body",
             "created_at",
             "updated_at",
@@ -175,7 +179,8 @@ class PersonalListSerializer(serializers.ModelSerializer):
         model = PersonalList
         fields = [
             "id",
-            "name",
+            "title",
+            "panel_color",
             "trip",
             "created_by",
             "created_at",

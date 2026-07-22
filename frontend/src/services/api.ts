@@ -15,9 +15,28 @@ export const api = {
 
   getTrip: (tripId: string) => request<Trip>(`${API_BASE}/trips/${tripId}/`),
 
+  updateTrip: (tripId: string, data: Partial<Trip>) =>
+    request<Trip>(`${API_BASE}/trips/${tripId}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   getGroceryList: (tripId: string, groceryListId: number) =>
     request<GroceryList>(
       `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/`,
+    ),
+
+  updateGroceryList: (
+    tripId: string,
+    groceryListId: number,
+    data: Partial<GroceryList>,
+  ) =>
+    request<GroceryList>(
+      `${API_BASE}/trips/${tripId}/groceries/${groceryListId}/`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
     ),
 
   createGroceryItem: (
@@ -58,6 +77,19 @@ export const api = {
   getPersonalList: (tripId: string, personalListId: number) =>
     request<PersonalList>(
       `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/`,
+    ),
+
+  updatePersonalList: (
+    tripId: string,
+    personalListId: number,
+    data: Partial<PersonalList>,
+  ) =>
+    request<PersonalList>(
+      `${API_BASE}/trips/${tripId}/personal-lists/${personalListId}/`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
     ),
 
   createPersonalItem: (
@@ -105,9 +137,9 @@ export const api = {
   updateNote: (
     tripId: string,
     noteId: number,
-    data: Partial<{ title: string; body: string }>,
+    data: Partial<TripNote>,
   ) =>
-    request<PersonalItem>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`, {
+    request<TripNote>(`${API_BASE}/trips/${tripId}/notes/${noteId}/`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
