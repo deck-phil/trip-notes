@@ -1,6 +1,5 @@
 import { api } from "./api";
-
-type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
+import type {ModuleType} from "../types/trip.ts";
 
 type ModuleProps =
   | { groceryListId: number }
@@ -49,7 +48,7 @@ export async function savePanelSettings({
       } as Partial<any>);
     }
 
-    case "notes": {
+    case "note": {
       const noteId = (module.props as { noteId: number }).noteId;
       return api.updateNote(tripId, noteId, {
         title: settings.title,
@@ -70,6 +69,6 @@ export async function savePanelSettings({
       } as Partial<any>);
 
     default:
-      throw new Error(`Unsupported module type: ${module.type satisfies never}`);
+      throw new Error(`Unsupported module type: ${module.type}`);
   }
 }

@@ -1,4 +1,4 @@
-export type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
+import type { ModuleType } from "./trip.ts";
 
 export interface ModuleInstance {
   id: string;
@@ -14,4 +14,15 @@ export type ModuleSettings = {
   allowMemberEdits?: boolean;
   noteStyle?: "compact" | "full";
   mapMode?: "roadmap" | "terrain";
+};
+
+export type InspectorTarget =
+  { kind: "trip" } | { kind: "module"; moduleId: string };
+
+export type TripSettings = {
+  title: string;
+  description: string;
+  location: string;
+  start_date: string;
+  end_date: string;
 };

@@ -1,3 +1,10 @@
+export type ModuleType = "grocery" | "personal" | "note" | "weather" | "map";
+
+export type CreatableModuleType = Extract<
+  ModuleType,
+  "grocery" | "personal" | "note"
+>;
+
 export interface TripListItem {
   id: number;
   title: string;

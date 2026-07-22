@@ -86,7 +86,7 @@ class TripListView(generics.ListAPIView):
         )
 
 
-class TripDetailView(generics.RetrieveAPIView):
+class TripDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TripSerializer
     permission_classes = [permissions.IsAuthenticated]
 

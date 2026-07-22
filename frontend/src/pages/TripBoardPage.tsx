@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { api } from "../services/api";
-import type { Trip } from "../types/trip";
+import type { CreatableModuleType, ModuleType, Trip } from "../types/trip";
 import TripHeaderPanel from "../components/TripHeaderPanel";
 import GroceryPanel from "../components/GroceryPanel";
 import PersonalListPanel from "../components/PersonalListPanel";
@@ -34,9 +34,12 @@ import {
   savePanelSettings,
   type SharedSettings,
 } from "../services/savePanelSettings.ts";
-import type {ModuleSettings} from "../types/inspectorTypes.ts";
-
-type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
+import type {
+  InspectorTarget,
+  ModuleSettings,
+  TripSettings,
+} from "../types/inspectorTypes.ts";
+import ToolBar from "../components/board/ToolBar.tsx";
 
 type ModuleProps =
   | { groceryListId: number }
@@ -154,7 +157,7 @@ export default function TripBoardPage() {
 
     const noteModules: ModuleInstance[] = trip.notes.map((note) => ({
       id: `note-${note.id}`,
-      type: "notes",
+      type: "note",
       title: note.title,
       panel_color: note.panel_color,
       props: { noteId: note.id },
@@ -162,11 +165,21 @@ export default function TripBoardPage() {
     }));
 
     const sharedModules: ModuleInstance[] = [
-      { id: "weather-primary", type: "weather", title: "Weather", panel_color: "blue" },
+      {
+        id: "weather-primary",
+        type: "weather",
+        title: "Weather",
+        panel_color: "blue",
+      },
     ];
 
     if (hasMap) {
-      sharedModules.push({ id: "map-primary", type: "map", title: "Map", panel_color: "green" });
+      sharedModules.push({
+        id: "map-primary",
+        type: "map",
+        title: "Map",
+        panel_color: "green",
+      });
     }
 
     return [
@@ -189,18 +202,21 @@ export default function TripBoardPage() {
 
   const INSPECTOR_EXIT_MS = 220;
 
+  const [isCreatingPanel, setIsCreatingPanel] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
-  const [inspectorModuleId, setInspectorModuleId] = useState<string | null>(
-    null,
-  );
   const [isInspectorVisible, setIsInspectorVisible] = useState(false);
-
+  const [inspectorTarget, setInspectorTarget] =
+    useState<InspectorTarget | null>(null);
+  const [tripSettings, setTripSettings] = useState<TripSettings>({
+    title: "",
+    description: "",
+    location: "",
+    start_date: "",
+    end_date: "",
+  });
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
-  const inspectorModule = inspectorModuleId
-    ? moduleLookup[inspectorModuleId]
-    : null;
 
   const throttledCrossColumnMove = useRef(
     throttle(
@@ -308,6 +324,11 @@ export default function TripBoardPage() {
     }),
   );
 
+  const inspectorModule =
+    inspectorTarget?.kind === "module"
+      ? (moduleLookup[inspectorTarget.moduleId] ?? null)
+      : null;
+
   function renderModule(
     instance: ModuleInstance,
     isEditMode = false,
@@ -342,7 +363,7 @@ export default function TripBoardPage() {
           />
         );
 
-      case "notes":
+      case "note":
         return (
           <NotesPanel
             tripId={requiredTripId}
@@ -442,10 +463,14 @@ export default function TripBoardPage() {
   }
 
   function openModuleInspector(moduleId: string) {
+    if (!moduleLookup[moduleId]) {
+      return;
+    }
+
     clearInspectorCloseTimer();
     clearInspectorOpenFrame();
 
-    setInspectorModuleId(moduleId);
+    setInspectorTarget({ kind: "module", moduleId });
     setSelectedModuleId(moduleId);
     setIsInspectorVisible(false);
 
@@ -457,9 +482,98 @@ export default function TripBoardPage() {
     });
   }
 
-  function closeModuleInspector() {
-    const closingId = selectedModuleId;
+  function openTripInspector() {
+    const open = () => {
+      if (!trip) return;
+      setTripSettings({
+        title: trip.title ?? "",
+        description: trip.description ?? "",
+        location: trip.location ?? "",
+        start_date: trip.start_date ?? "",
+        end_date: trip.end_date ?? "",
+      });
 
+      clearInspectorCloseTimer();
+      clearInspectorOpenFrame();
+
+      setInspectorTarget({ kind: "trip" });
+      setSelectedModuleId(null);
+      setIsInspectorVisible(false);
+
+      openFrameRef.current = window.requestAnimationFrame(() => {
+        openFrameRef.current = window.requestAnimationFrame(() => {
+          setIsInspectorVisible(true);
+          openFrameRef.current = null;
+        });
+      });
+    };
+
+    if (inspectorTarget) {
+      saveCurrentInspectorTarget({
+        onSettled: open,
+      });
+      return;
+    }
+
+    open();
+  }
+  function handleTripInspectorSaveAndClose() {
+    saveTripSettingsMutation.mutate(tripSettings, {
+      onSettled: () => {
+        closeModuleInspector();
+      },
+    });
+  }
+  const saveTripSettingsMutation = useMutation({
+    mutationFn: (settings: TripSettings) =>
+      api.updateTrip(requiredTripId, settings),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["trip", requiredTripId],
+      });
+    },
+  });
+
+  function saveCurrentInspectorTarget(options?: { onSettled?: () => void }) {
+    if (!inspectorTarget) {
+      options?.onSettled?.();
+      return;
+    }
+
+    if (inspectorTarget.kind === "trip") {
+      saveTripSettingsMutation.mutate(tripSettings, {
+        onSettled: () => {
+          options?.onSettled?.();
+        },
+      });
+      return;
+    }
+
+    if (inspectorModule) {
+      savePanelSettingsMutation.mutate(
+        {
+          module: inspectorModule,
+          settings: getModuleSettings(inspectorModule.id),
+        },
+        {
+          onSettled: () => {
+            options?.onSettled?.();
+          },
+        },
+      );
+      return;
+    }
+
+    options?.onSettled?.();
+  }
+  function updateTripSettings(patch: Partial<TripSettings>) {
+    setTripSettings((current) => ({
+      ...current,
+      ...patch,
+    }));
+  }
+
+  function closeModuleInspector() {
     clearInspectorCloseTimer();
     clearInspectorOpenFrame();
 
@@ -467,9 +581,7 @@ export default function TripBoardPage() {
     setIsInspectorVisible(false);
 
     closeTimerRef.current = window.setTimeout(() => {
-      setInspectorModuleId((current) =>
-        current === closingId ? null : current,
-      );
+      setInspectorTarget(null);
       closeTimerRef.current = null;
     }, INSPECTOR_EXIT_MS);
   }
@@ -479,16 +591,17 @@ export default function TripBoardPage() {
       return;
     }
 
-    if (inspectorModule) {
-      savePanelSettingsMutation.mutate({
-        module: inspectorModule,
-        settings: getModuleSettings(inspectorModule.id),
+    if (inspectorTarget) {
+      saveCurrentInspectorTarget({
+        onSettled: () => {
+          openModuleInspector(moduleId);
+        },
       });
+      return;
     }
 
     openModuleInspector(moduleId);
   }
-
   function isModuleEditing(moduleId: string) {
     return selectedModuleId === moduleId;
   }
@@ -506,7 +619,7 @@ export default function TripBoardPage() {
       clearInspectorOpenFrame();
     };
   }, []);
-  const shouldRenderInspector = !!inspectorModule;
+  const shouldRenderInspector = !!inspectorTarget;
   const [inspectorJiggleY, setInspectorJiggleY] = useState(0);
 
   useEffect(() => {
@@ -573,13 +686,26 @@ export default function TripBoardPage() {
     }));
   }
 
-  function getInvalidationKeys(module: ModuleInstance, _tripId: string): unknown[][] {
+  function getInvalidationKeys(
+    module: ModuleInstance,
+    _tripId: string,
+  ): unknown[][] {
     switch (module.type) {
       case "grocery":
-        return [["groceryList", (module.props as { groceryListId: number }).groceryListId]];
+        return [
+          [
+            "groceryList",
+            (module.props as { groceryListId: number }).groceryListId,
+          ],
+        ];
       case "personal":
-        return [["personalList", (module.props as { personalListId: number }).personalListId]];
-      case "notes":
+        return [
+          [
+            "personalList",
+            (module.props as { personalListId: number }).personalListId,
+          ],
+        ];
+      case "note":
         return [["note", (module.props as { noteId: number }).noteId]];
       default:
         return [];
@@ -587,18 +713,27 @@ export default function TripBoardPage() {
   }
 
   const savePanelSettingsMutation = useMutation({
-    mutationFn: ({ module, settings }: { module: ModuleInstance; settings: SharedSettings }) =>
-      savePanelSettings({ tripId: requiredTripId, module, settings }),
+    mutationFn: ({
+      module,
+      settings,
+    }: {
+      module: ModuleInstance;
+      settings: SharedSettings;
+    }) => savePanelSettings({ tripId: requiredTripId, module, settings }),
     onSuccess: async (_, { module }) => {
       const keys = getInvalidationKeys(module, requiredTripId);
       await Promise.all(
-        keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
+        keys.map((key) => queryClient.invalidateQueries({ queryKey: key })),
       );
     },
   });
 
   function handleInspectorSaveAndClose() {
-    if (!inspectorModule) {
+    if (
+      !inspectorTarget ||
+      inspectorTarget.kind !== "module" ||
+      !inspectorModule
+    ) {
       closeModuleInspector();
       return;
     }
@@ -615,6 +750,7 @@ export default function TripBoardPage() {
       },
     );
   }
+
   if (isPending) {
     return <p className="board-message">Loading dashboard...</p>;
   }
@@ -636,6 +772,32 @@ export default function TripBoardPage() {
           activeModule.panel_color,
       }
     : null;
+
+  async function handleAddPanel(type: CreatableModuleType) {
+    setIsCreatingPanel(true);
+
+    try {
+      if (type === "grocery") {
+        return;
+        // await api.createGroceryList(requiredTripId, {
+        //   title: "New Grocery List",
+        // });
+      }
+
+      if (type === "personal") {
+        return;
+        // await api.createPersonalList(requiredTripId, {
+        //   title: "New Personal List",
+        // });
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: ["trip", requiredTripId],
+      });
+    } finally {
+      setIsCreatingPanel(false);
+    }
+  }
 
   return (
     <main className="board-page">
@@ -666,7 +828,8 @@ export default function TripBoardPage() {
                   }
                   const liveSettings = getModuleSettings(module.id);
                   const liveTitle = liveSettings.title ?? module.title;
-                  const livePanelColor = liveSettings.panel_color ?? module.panel_color;
+                  const livePanelColor =
+                    liveSettings.panel_color ?? module.panel_color;
 
                   const isEditing = isModuleEditing(module.id);
                   const canEditModule =
@@ -712,14 +875,36 @@ export default function TripBoardPage() {
         </DndContext>
       </div>
 
-      {shouldRenderInspector && inspectorModule ? (
+      <ToolBar
+        onAdd={handleAddPanel}
+        onOpenSettings={openTripInspector}
+        isCreating={isCreatingPanel}
+      />
+
+      {shouldRenderInspector && inspectorTarget ? (
         <InspectorPanel
+          target={inspectorTarget}
+          trip={trip}
           module={inspectorModule}
           isVisible={isInspectorVisible}
           jiggleY={inspectorJiggleY}
-          settings={getModuleSettings(inspectorModule.id)}
-          onChange={(patch) => updateModuleSettings(inspectorModule.id, patch)}
-          onClose={handleInspectorSaveAndClose}
+          settings={
+            inspectorTarget.kind === "module" && inspectorModule
+              ? getModuleSettings(inspectorModule.id)
+              : {}
+          }
+          tripSettings={tripSettings}
+          onTripSettingsChange={updateTripSettings}
+          onChange={
+            inspectorTarget.kind === "module" && inspectorModule
+              ? (patch) => updateModuleSettings(inspectorModule.id, patch)
+              : undefined
+          }
+          onClose={
+            inspectorTarget.kind === "module"
+              ? handleInspectorSaveAndClose
+              : handleTripInspectorSaveAndClose
+          }
         />
       ) : null}
     </main>

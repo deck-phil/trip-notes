@@ -40,7 +40,7 @@ export default function TripMapPanel({ trip }: Props) {
 
           <Marker position={position}>
             <Popup>
-              <strong>{trip.name}</strong>
+              <strong>{trip.title}</strong>
               <br />
               {trip.location || "Trip destination"}
             </Popup>
