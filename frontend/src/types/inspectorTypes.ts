@@ -4,6 +4,7 @@ export interface ModuleInstance {
   id: string;
   type: ModuleType;
   title: string;
+  panel_color?: string;
   created_by?: number | null;
 }
 

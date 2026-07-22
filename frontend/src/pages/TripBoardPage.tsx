@@ -614,6 +614,18 @@ export default function TripBoardPage() {
     );
   }
 
+  const activeModule = activeId ? moduleLookup[activeId] : null;
+
+  const activePreviewModule = activeModule
+    ? {
+        ...activeModule,
+        title: getModuleSettings(activeModule.id).title ?? activeModule.title,
+        panel_color:
+          getModuleSettings(activeModule.id).panel_color ??
+          activeModule.panel_color,
+      }
+    : null;
+
   return (
     <main className="board-page">
       <div className="board-surface">
@@ -683,7 +695,7 @@ export default function TripBoardPage() {
 
           <DragOverlay dropAnimation={{ duration: 180, easing: "ease-out" }}>
             {activeId ? (
-              <BoardModuleCardPreview module={moduleLookup[activeId]} />
+              <BoardModuleCardPreview module={activePreviewModule} />
             ) : null}
           </DragOverlay>
         </DndContext>

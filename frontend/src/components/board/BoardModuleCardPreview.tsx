@@ -1,10 +1,7 @@
+import type { ModuleInstance } from "../../types/inspectorTypes.ts";
+
 type BoardModuleCardPreviewProps = {
-  module?: {
-    id: string;
-    type: string;
-    title: string;
-    panel_color: string;
-  };
+  module?: ModuleInstance | null;
 };
 
 export default function BoardModuleCardPreview({
