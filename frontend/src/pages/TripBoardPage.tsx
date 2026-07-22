@@ -145,8 +145,8 @@ export default function TripBoardPage() {
       (list) => ({
         id: `personal-${list.id}`,
         type: "personal",
-        title: `${list.title}`,
-        panel_color: `${list.panel_color}`,
+        title: list.title,
+        panel_color: list.panel_color,
         props: { personalListId: list.id },
         created_by: list.created_by,
       }),
@@ -479,6 +479,13 @@ export default function TripBoardPage() {
       return;
     }
 
+    if (inspectorModule) {
+      savePanelSettingsMutation.mutate({
+        module: inspectorModule,
+        settings: getModuleSettings(inspectorModule.id),
+      });
+    }
+
     openModuleInspector(moduleId);
   }
 
@@ -566,23 +573,27 @@ export default function TripBoardPage() {
     }));
   }
 
+  function getInvalidationKeys(module: ModuleInstance, _tripId: string): unknown[][] {
+    switch (module.type) {
+      case "grocery":
+        return [["groceryList", (module.props as { groceryListId: number }).groceryListId]];
+      case "personal":
+        return [["personalList", (module.props as { personalListId: number }).personalListId]];
+      case "notes":
+        return [["note", (module.props as { noteId: number }).noteId]];
+      default:
+        return [];
+    }
+  }
+
   const savePanelSettingsMutation = useMutation({
-    mutationFn: ({
-      module,
-      settings,
-    }: {
-      module: ModuleInstance;
-      settings: SharedSettings;
-    }) =>
-      savePanelSettings({
-        tripId: requiredTripId,
-        module,
-        settings,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["trip", requiredTripId],
-      });
+    mutationFn: ({ module, settings }: { module: ModuleInstance; settings: SharedSettings }) =>
+      savePanelSettings({ tripId: requiredTripId, module, settings }),
+    onSuccess: async (_, { module }) => {
+      const keys = getInvalidationKeys(module, requiredTripId);
+      await Promise.all(
+        keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
+      );
     },
   });
 

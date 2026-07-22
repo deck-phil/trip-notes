@@ -9,11 +9,35 @@ type Props = {
   onChange: (patch: Partial<ModuleSettings>) => void;
 };
 
+const PANEL_COLORS = [
+  "yellow",
+  "red",
+  "blue",
+  "green",
+  "peach",
+  "lavender",
+  "mint",
+  "orange",
+] as const;
+
+const colorLabelMap: Record<(typeof PANEL_COLORS)[number], string> = {
+  yellow: "Yellow",
+  red: "Red",
+  blue: "Blue",
+  green: "Green",
+  peach: "Peach",
+  lavender: "Lavender",
+  mint: "Mint",
+  orange: "Orange",
+};
+
 export default function SharedPanelSettings({
   module,
   settings,
   onChange,
 }: Props) {
+  const selectedColor = settings.panel_color ?? module.panel_color ?? "blue";
+
   return (
     <section className="inspector-section shared-panel-settings">
       <label className="inspector-field" htmlFor="panel-title">
@@ -27,25 +51,38 @@ export default function SharedPanelSettings({
         />
       </label>
 
-      <label className="inspector-field" htmlFor="panel-color">
+      <div className="inspector-field">
         <span className="inspector-field__label">Color</span>
-        <select
-          id="panel-color"
-          className="inspector-field__select"
-          value={settings.panel_color ?? ""}
-          onChange={(event) => onChange({ panel_color: event.target.value })}
+
+        <div
+          className="inspector-color-grid"
+          role="radiogroup"
+          aria-label="Panel color"
         >
-          <option value="yellow">Yellow</option>
-          <option value="green">Green</option>
-          <option value="red">Red</option>
-          <option value="blue">Blue</option>
-          <option value="orange">Orange</option>
-          <option value="lavender">Lavender</option>
-          <option value="mint">Mint</option>
-          <option value="peach">Peach</option>
-          <option value="sky">Sky</option>
-        </select>
-      </label>
+          {PANEL_COLORS.map((color) => {
+            const isSelected = selectedColor === color;
+
+            return (
+              <button
+                key={color}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                className={`inspector-color-option ${isSelected ? "is-selected" : ""}`}
+                onClick={() => onChange({ panel_color: color })}
+              >
+                <span
+                  className={`color-swatch color-swatch--${color}`}
+                  aria-hidden="true"
+                />
+                <span className="inspector-color-option__label">
+                  {colorLabelMap[color]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

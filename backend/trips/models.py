@@ -14,7 +14,6 @@ class PanelColor(models.TextChoices):
     LAVENDER = "lavender", "Lavender"
     MINT = "mint", "Mint"
     PEACH = "peach", "Peach"
-    SKY = "sky", "Sky"
 
 class Trip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

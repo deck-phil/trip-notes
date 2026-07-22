@@ -158,11 +158,6 @@ body {
     --card-border: #8fd7a2;
 }
 
-.board-module-card--sky {
-    --card-bg: #bae1ff;
-    --card-border: #8db8d8;
-}
-
 .board-module-card--orange {
     --card-bg: #ffdfba;
     --card-border: #d8b28d;
@@ -894,4 +889,99 @@ body:has(.board-module-card--dragging) * {
     calc(100% - 11px) 17px;
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
+}
+
+.inspector-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.inspector-color-option {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2937;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.inspector-color-option:hover {
+  background: #f8fafc;
+  border-color: #bfc7d4;
+}
+
+.inspector-color-option.is-selected {
+  border-color: #6d8ef7;
+  background: #f5f8ff;
+  box-shadow: 0 0 0 2px rgba(109, 142, 247, 0.14);
+}
+
+.inspector-color-option:focus-visible {
+  outline: none;
+  border-color: #6d8ef7;
+  box-shadow: 0 0 0 3px rgba(109, 142, 247, 0.2);
+}
+
+.inspector-color-option__label {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.color-swatch {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.color-swatch--yellow {
+  background: #f3e58d;
+  border-color: #d7c45d;
+}
+
+.color-swatch--red {
+  background: #efc4d2;
+  border-color: #d59aae;
+}
+
+.color-swatch--blue {
+  background: #c9ddf2;
+  border-color: #9db9d8;
+}
+
+.color-swatch--green {
+  background: #d8e7cf;
+  border-color: #afc49f;
+}
+
+.color-swatch--peach {
+  background: #fac29d;
+  border-color: #dc9f79;
+}
+
+.color-swatch--lavender {
+  background: #e0bbe4;
+  border-color: #bea0c5;
+}
+
+.color-swatch--mint {
+  background: #baffc9;
+  border-color: #8fd7a2;
+}
+
+.color-swatch--orange {
+  background: #ffdfba;
+  border-color: #d8b28d;
 }

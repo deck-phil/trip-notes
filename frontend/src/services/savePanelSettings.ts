@@ -1,4 +1,3 @@
-// services/savePanelSettings.ts
 import { api } from "./api";
 
 type ModuleType = "grocery" | "personal" | "notes" | "weather" | "map";
@@ -54,7 +53,7 @@ export async function savePanelSettings({
       const noteId = (module.props as { noteId: number }).noteId;
       return api.updateNote(tripId, noteId, {
         title: settings.title,
-        panel_color: settings.panel_color ?? "",
+        panel_color: settings.panel_color,
       });
     }
 
