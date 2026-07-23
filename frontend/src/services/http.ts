@@ -15,6 +15,8 @@ export class ApiError extends Error {
   }
 }
 
+let csrfToken: string | null = null;
+
 export function getCookie(name: string): string | null {
   const cookieString = document.cookie;
   if (!cookieString) return null;
@@ -36,11 +38,15 @@ function isUnsafeMethod(method?: string): boolean {
   return !["GET", "HEAD", "OPTIONS", "TRACE"].includes(method.toUpperCase());
 }
 
-export async function getCsrfToken(): Promise<void> {
-  await fetch(`${API_BASE}/auth/csrf/`, {
+export async function getCsrfToken(): Promise<string | null> {
+  const res = await fetch(`${API_BASE}/auth/csrf/`, {
     method: "GET",
     credentials: "include",
   });
+
+  const data = await parseJson<{ csrfToken?: string }>(res);
+  csrfToken = res.headers.get("X-CSRFToken") || data?.csrfToken || null;
+  return csrfToken;
 }
 
 export async function request<T>(
@@ -51,11 +57,9 @@ export async function request<T>(
   const headers = new Headers(init.headers ?? {});
 
   if (isUnsafeMethod(method)) {
-    await getCsrfToken();
-
-    const csrfToken = getCookie("csrftoken");
-    if (csrfToken) {
-      headers.set("X-CSRFToken", csrfToken);
+    const token = csrfToken ?? (await getCsrfToken());
+    if (token) {
+      headers.set("X-CSRFToken", token);
     }
   }
 
