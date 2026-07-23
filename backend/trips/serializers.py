@@ -21,6 +21,7 @@ class TripListSerializer(serializers.ModelSerializer):
             "location",
             "start_date",
             "end_date",
+            "is_public",
             "is_active",
             "is_organizer",
         ]
@@ -89,6 +90,7 @@ class TripSerializer(serializers.ModelSerializer):
             "description",
             "start_date",
             "end_date",
+            "is_public",
             "latitude",
             "longitude",
             "is_member",

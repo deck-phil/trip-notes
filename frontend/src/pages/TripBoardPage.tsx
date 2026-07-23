@@ -105,6 +105,7 @@ export default function TripBoardPage() {
 
   const requiredTripId = tripId;
   const { user: currentUser } = useAuth();
+  const canManageBoard = !!currentUser;
   const {
     data: trip,
     isPending,
@@ -463,6 +464,9 @@ export default function TripBoardPage() {
   }
 
   function openModuleInspector(moduleId: string) {
+    if (!canManageBoard) {
+      return;
+    }
     if (!moduleLookup[moduleId]) {
       return;
     }
@@ -483,6 +487,10 @@ export default function TripBoardPage() {
   }
 
   function openTripInspector() {
+    if (!canManageBoard) {
+      return;
+    }
+
     const open = () => {
       if (!trip) return;
       setTripSettings({
@@ -517,6 +525,7 @@ export default function TripBoardPage() {
 
     open();
   }
+
   function handleTripInspectorSaveAndClose() {
     saveTripSettingsMutation.mutate(tripSettings, {
       onSettled: () => {
@@ -524,6 +533,7 @@ export default function TripBoardPage() {
       },
     });
   }
+
   const saveTripSettingsMutation = useMutation({
     mutationFn: (settings: TripSettings) =>
       api.updateTrip(requiredTripId, settings),
@@ -566,6 +576,7 @@ export default function TripBoardPage() {
 
     options?.onSettled?.();
   }
+
   function updateTripSettings(patch: Partial<TripSettings>) {
     setTripSettings((current) => ({
       ...current,
@@ -585,7 +596,12 @@ export default function TripBoardPage() {
       closeTimerRef.current = null;
     }, INSPECTOR_EXIT_MS);
   }
+
   function toggleModuleEditing(moduleId: string) {
+    if (!canManageBoard) {
+      return;
+    }
+
     if (selectedModuleId === moduleId) {
       closeModuleInspector();
       return;
@@ -602,6 +618,7 @@ export default function TripBoardPage() {
 
     openModuleInspector(moduleId);
   }
+
   function isModuleEditing(moduleId: string) {
     return selectedModuleId === moduleId;
   }
@@ -612,6 +629,12 @@ export default function TripBoardPage() {
       openFrameRef.current = null;
     }
   }
+
+  useEffect(() => {
+    if (!canManageBoard) {
+      closeModuleInspector();
+    }
+  }, [canManageBoard]);
 
   useEffect(() => {
     return () => {
@@ -833,7 +856,7 @@ export default function TripBoardPage() {
 
                   const isEditing = isModuleEditing(module.id);
                   const canEditModule =
-                    trip.is_organizer || module.created_by === currentUser?.id;
+                    canManageBoard && (trip.is_organizer || module.created_by === currentUser?.id);
 
                   return (
                     <BoardModuleCard
@@ -875,13 +898,15 @@ export default function TripBoardPage() {
         </DndContext>
       </div>
 
-      <ToolBar
-        onAdd={handleAddPanel}
-        onOpenSettings={openTripInspector}
-        isCreating={isCreatingPanel}
-      />
+      {canManageBoard ? (
+        <ToolBar
+          onAdd={handleAddPanel}
+          onOpenSettings={openTripInspector}
+          isCreating={isCreatingPanel}
+        />
+      ) : null}
 
-      {shouldRenderInspector && inspectorTarget ? (
+      {canManageBoard  && shouldRenderInspector && inspectorTarget ? (
         <InspectorPanel
           target={inspectorTarget}
           trip={trip}

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   BrowserRouter,
+  Link,
   Navigate,
   Outlet,
   Route,
@@ -32,33 +33,61 @@ function ProtectedRoute({ user, loading, children }: ProtectedRouteProps) {
   return children;
 }
 
-interface AppShellProps {
-  user: AuthUser;
+interface TopNavProps {
+  user: AuthUser | null;
+  loading: boolean;
   onLogout: () => Promise<void>;
 }
 
-function AppShell({ user, onLogout }: AppShellProps) {
+function TopNav({ user, loading, onLogout }: TopNavProps) {
+  return (
+    <header
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "1rem 1.5rem",
+        borderBottom: "1px solid #d6d6d6",
+        background: "#fff",
+      }}
+    >
+      <Link
+        to={user ? "/trips" : "/"}
+        style={{ textDecoration: "none", color: "inherit", fontWeight: 700 }}
+      >
+        TripTrack
+      </Link>
+
+      {loading ? (
+        <span>Loading...</span>
+      ) : user ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span>
+            Signed in as <strong>{user.username}</strong>
+          </span>
+          <button type="button" onClick={onLogout}>
+            Log out
+          </button>
+        </div>
+      ) : (
+        <Link to="/login">Log in</Link>
+      )}
+    </header>
+  );
+}
+
+function AppLayout({
+  user,
+  loading,
+  onLogout,
+}: {
+  user: AuthUser | null;
+  loading: boolean;
+  onLogout: () => Promise<void>;
+}) {
   return (
     <>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem 1.5rem",
-          borderBottom: "1px solid #d6d6d6",
-          background: "#fff",
-        }}
-      >
-        <div>
-          Signed in as <strong>{user.username}</strong>
-        </div>
-
-        <button type="button" onClick={onLogout}>
-          Log out
-        </button>
-      </header>
-
+      <TopNav user={user} loading={loading} onLogout={onLogout} />
       <Outlet />
     </>
   );
@@ -88,6 +117,7 @@ export default function App() {
       await logout();
     } finally {
       setUser(null);
+      window.location.href = "/login";
     }
   }
 
@@ -96,32 +126,46 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route
-            path="/login"
             element={
-              authLoading ? (
-                <p className="board-message">Loading...</p>
-              ) : user ? (
-                <Navigate to="/trips" replace />
-              ) : (
-                <LoginPage onLogin={setUser} />
-              )
-            }
-          />
-
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute user={user} loading={authLoading}>
-                <AppShell user={user as AuthUser} onLogout={handleLogout} />
-              </ProtectedRoute>
+              <AppLayout
+                user={user}
+                loading={authLoading}
+                onLogout={handleLogout}
+              />
             }
           >
-            <Route index element={<TripIndexPage />} />
-            <Route path="trips" element={<TripListPage />} />
-            <Route path="board/:tripId" element={<TripBoardPage />} />
-          </Route>
+            <Route
+              path="/login"
+              element={
+                authLoading ? (
+                  <p className="board-message">Loading...</p>
+                ) : user ? (
+                  <Navigate to="/trips" replace />
+                ) : (
+                  <LoginPage onLogin={setUser} />
+                )
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/trips" replace />} />
+            <Route path="/board/:tripId" element={<TripBoardPage />} />
+
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute user={user} loading={authLoading}>
+                  <Outlet />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<TripIndexPage />} />
+              <Route path="trips" element={<TripListPage />} />
+            </Route>
+
+            <Route
+              path="*"
+              element={<Navigate to={user ? "/trips" : "/login"} replace />}
+            />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

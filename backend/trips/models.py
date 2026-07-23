@@ -27,6 +27,7 @@ class Trip(models.Model):
     description = models.TextField(blank=True)
     start_date = models.DateField()
     end_date = models.DateField()
+    is_public = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     latitude = models.DecimalField(

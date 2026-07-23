@@ -4,6 +4,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, permissions, views, response, status
 from .models import Trip, TripNote, PersonalList, GroceryList, GroceryItem, PersonalItem
+from .permissions import TripAccessPermission
 from .serializers import TripSerializer, NoteSerializer, \
     TripWeatherSerializer, CurrentUserSerializer, TripListSerializer, GroceryListSerializer, PersonalListSerializer, \
     GroceryItemSerializer, PersonalItemSerializer
@@ -88,19 +89,18 @@ class TripListView(generics.ListAPIView):
 
 class TripDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TripSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
 
     def get_queryset(self):
-        return (
-            Trip.objects
-            .filter(memberships__user=self.request.user)
-            .distinct()
-        )
+        if self.request.user.is_authenticated:
+            return Trip.objects.all().distinct()
+
+        return Trip.objects.filter(is_public=True).distinct()
 
 
 class TripGroceryListDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GroceryListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
     lookup_field = "id"
     lookup_url_kwarg = "grocery_list_id"
 
@@ -117,13 +117,26 @@ class TripGroceryListDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TripGroceryItemCreateView(generics.CreateAPIView):
     serializer_class = GroceryItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
 
     def get_grocery_list(self):
-        return generics.get_object_or_404(
-            GroceryList.objects.filter(trip_id=self.kwargs["trip_id"]),
+        grocery_list = generics.get_object_or_404(
+            GroceryList.objects.select_related("trip"),
             id=self.kwargs["grocery_list_id"],
+            trip_id=self.kwargs["trip_id"],
         )
+
+        membership = grocery_list.trip.memberships.filter(
+            user=self.request.user
+        ).first()
+
+        if membership is None:
+            self.permission_denied(
+                self.request,
+                message="You must be a trip member to edit this trip."
+            )
+
+        return grocery_list
 
     def perform_create(self, serializer):
         serializer.save(
@@ -131,10 +144,9 @@ class TripGroceryItemCreateView(generics.CreateAPIView):
             added_by=self.request.user,
         )
 
-
 class TripGroceryItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GroceryItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
     lookup_field = "id"
     lookup_url_kwarg = "item_id"
 
@@ -152,7 +164,7 @@ class TripGroceryItemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TripNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
     lookup_field = "id"
     lookup_url_kwarg = "note_id"
 
@@ -168,7 +180,7 @@ class TripNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TripPersonalListDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PersonalListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
     lookup_field = "id"
     lookup_url_kwarg = "personal_list_id"
 
@@ -185,7 +197,7 @@ class TripPersonalListDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TripPersonalItemCreateView(generics.CreateAPIView):
     serializer_class = PersonalItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
 
     def get_personal_list(self):
         return generics.get_object_or_404(
@@ -201,7 +213,7 @@ class TripPersonalItemCreateView(generics.CreateAPIView):
 
 class TripPersonalItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PersonalItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
     lookup_field = "id"
     lookup_url_kwarg = "item_id"
 
@@ -218,7 +230,7 @@ class TripPersonalItemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TripWeatherView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny, TripAccessPermission]
 
     def get(self, request, trip_id):
         try:
