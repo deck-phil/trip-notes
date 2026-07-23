@@ -375,7 +375,7 @@ export default function TripBoardPage() {
         );
 
       case "weather":
-        return <WeatherPanel tripId={requiredTripId} />;
+        return <WeatherPanel tripId={requiredTripId} startDate={trip.start_date} endDate={trip.end_date} />;
 
       case "map":
         return <TripMapPanel trip={trip} />;

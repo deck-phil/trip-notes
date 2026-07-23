@@ -5,6 +5,8 @@ import { getWeatherIcon } from "./WeatherIcons";
 
 type Props = {
   tripId: string;
+  startDate: string | null;
+  endDate: string | null;
 };
 
 function formatNumber(value: number | null, unit = "") {
@@ -29,7 +31,31 @@ function formatDayLabel(date: string) {
   }).format(parsed);
 }
 
-export default function WeatherPanel({ tripId }: Props) {
+function canFetchWeather(
+  startDate: string | null,
+  endDate: string | null,
+): boolean {
+  if (!startDate || !endDate) return false;
+
+  const tripStart = new Date(`${startDate}T12:00:00`);
+  const tripEnd = new Date(`${endDate}T12:00:00`);
+
+  if (Number.isNaN(tripStart.getTime()) || Number.isNaN(tripEnd.getTime())) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const forecastEnd = new Date(today);
+  forecastEnd.setDate(forecastEnd.getDate() + 16);
+
+  return tripEnd >= today && tripStart <= forecastEnd;
+}
+
+export default function WeatherPanel({ tripId, startDate, endDate }: Props) {
+  const weatherEnabled = canFetchWeather(startDate, endDate);
+
   const {
     data: weather,
     isPending,
@@ -37,7 +63,12 @@ export default function WeatherPanel({ tripId }: Props) {
   } = useQuery<TripWeather | null>({
     queryKey: ["weather", tripId],
     queryFn: () => api.getWeather(tripId),
+    enabled: weatherEnabled,
   });
+
+  if (!weatherEnabled) {
+    return <p className="panel-meta">Weather will appear when this trip is within the 16-day forecast window.</p>;
+  }
 
   if (isPending) {
     return <p className="panel-meta">Loading weather...</p>;
