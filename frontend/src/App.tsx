@@ -55,7 +55,7 @@ function TopNav({ user, loading, onLogout }: TopNavProps) {
         to={user ? "/trips" : "/"}
         style={{ textDecoration: "none", color: "inherit", fontWeight: 700 }}
       >
-        TripTrack
+        Trip Notes
       </Link>
 
       {loading ? (

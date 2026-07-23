@@ -39,7 +39,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       >
         <section className="board-panel">
           <h1>Sign in</h1>
-          <p>Log in to view your TripTrack dashboard.</p>
+          <p>Log in to view your Trip Notes dashboard.</p>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginTop: "1rem" }}>
