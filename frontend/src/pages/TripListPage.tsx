@@ -69,7 +69,7 @@ export default function TripListPage() {
               className="trip-list-card"
             >
               <div className="trip-list-card__header">
-                <h2>{trip.name}</h2>
+                <h2>{trip.title}</h2>
                 {trip.is_organizer ? (
                   <span className="trip-list-card__badge">Organizer</span>
                 ) : null}
