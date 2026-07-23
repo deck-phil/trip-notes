@@ -11,9 +11,11 @@ class TripAccessPermission(permissions.BasePermission):
 
         if trip is None and hasattr(obj, "grocery_list"):
             trip = obj.grocery_list.trip
+            obj = obj.grocery_list
 
         if trip is None and hasattr(obj, "personal_list"):
             trip = obj.personal_list.trip
+            obj = obj.personal_list
 
         if trip is None:
             trip = obj

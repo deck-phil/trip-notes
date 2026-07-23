@@ -91,6 +91,10 @@ class TripMember(models.Model):
     )
     joined_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def is_organizer(self):
+        return self.role == self.Role.ORGANIZER
+
     class Meta:
         unique_together = ("trip", "user")
         ordering = ["trip", "user__username"]
