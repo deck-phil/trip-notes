@@ -105,7 +105,15 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SAMESITE = "Lax"
+else:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SAMESITE = "None"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
